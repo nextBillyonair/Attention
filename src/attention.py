@@ -29,7 +29,7 @@ class ConcatAttention(Module):
         if mask is not None:
             scores = scores.masked_fill(mask.unsqueeze(-1), -1e10)
 
-        weights = torch.softmax(scores, dim=0)
+        weights = torch.softmax(scores, dim=1)
         weights = weights.view(batch_size, 1, seq_len)
 
         attended = torch.bmm(weights, encodings).squeeze(1)
@@ -57,7 +57,7 @@ class DotAttention(Module):
         if mask is not None:
             scores = scores.masked_fill(mask.unsqueeze(-1), -1e10)
 
-        weights = torch.softmax(scores, dim=0)
+        weights = torch.softmax(scores, dim=1)
         weights = weights.view(batch_size, 1, seq_len)
 
         attended = torch.bmm(weights, encodings).squeeze(1)
@@ -74,7 +74,7 @@ class MeanAttention(Module):
 
     def forward(self, encodings, context=None, mask=None, return_weights=True):
         if mask is not None:
-            mask = mask.unsqueeze(-1).float()
+            mask = 1 - mask.unsqueeze(-1).float()
             weights = 1 / mask.sum(dim=-2, keepdim=True).expand_as(encodings)
             encodings = encodings * mask
         else:
