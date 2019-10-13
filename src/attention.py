@@ -5,7 +5,9 @@ from torch.nn import MultiheadAttention as TorchMultiheadAttention
 '''
 Notes:
 Masks should be 1 where we ignore
-0 for keep
+0 for keep,
+
+X == 0., where 0 is the pad
 '''
 
 
