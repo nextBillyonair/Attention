@@ -1,5 +1,6 @@
 import torch
 from torch.nn import Module, Linear, Bilinear
+from torch.nn import MultiheadAttention as TorchMultiheadAttention
 
 '''
 Notes:
@@ -97,3 +98,23 @@ class LastInSeqAttention(Module):
         if return_weights:
             return encodings[:, -1], None
         return encodings[:, -1]
+
+
+# BATCH FIRST
+class MultiheadAttention(Module):
+
+    def __init__(self, embedding_size, hidden_size, nhead=1, dropout=0.1):
+        super().__init__()
+        self.embedding_size = embedding_size
+        self.nhead = nhead
+        self.dropout = dropout
+        self.self_attn = TorchMultiheadAttention(embedding_size, nhead, dropout=dropout)
+
+    def forward(self, encodings, context=None, mask=None, return_weights=True):
+        encodings_t = encodings.transpose(0, 1)
+        attended = self.self_attn(encodings_t, encodings_t, encodings_t,
+                                    attn_mask=None, key_padding_mask=mask, need_weights=False)
+        attended = attended.transpose(1, 0) # BATCH, SEQ_LEN
+        if return_weights:
+            return attended, None
+        return attended
