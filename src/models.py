@@ -44,11 +44,11 @@ class RNNModel(Module):
 class TransformerModel(Module):
     def __init__(self, embedding_matrix, num_layers=1, transformer_hidden_size=64, nheads=5,
                  attn_hidden_size=64, attention_type=ConcatAttention, pos_type=SineEmbeddings,
-                 embed_size=64, dropout=0.1, num_outputs=5, seq_len=512
+                 embed_size=64, dropout=0.1, num_outputs=5, seq_len=512, pos_dropout=0.1,
                 ):
         super().__init__()
         self.embedding = Embedding.from_pretrained(embedding_matrix)
-        self.pos_embedding = pos_type(seq_len, embedding_matrix.size(-1))
+        self.pos_embedding = pos_type(embedding_matrix.size(-1), dropout=pos_dropout, max_seq_len=seq_len)
         self.lin2 = Linear(embedding_matrix.size(-1), embed_size)
         self.self_attn = BatchFirstTransformer(embed_size, nhead=nheads,
                     dim_feedforward=transformer_hidden_size, activation="relu")
