@@ -1,5 +1,5 @@
 import torch
-from torch.nn import Module
+from torch.nn import Module, Dropout
 import math
 
 class PositionalEmbeddings(Module):
