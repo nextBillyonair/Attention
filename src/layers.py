@@ -264,8 +264,8 @@ class Transformer(Module):
 
         self.final_layer = Linear(d_model, target_vocab_size)
 
-    def forward(self, input, target, enc_padding_mask,
-                look_ahead_mask, dec_padding_mask):
+    def forward(self, input, target, enc_padding_mask=None,
+                look_ahead_mask=None, dec_padding_mask=None):
         # enc_output.shape == (batch_size, inp_seq_len, d_model)
         enc_output = self.encoder(input, enc_padding_mask)
         # dec_output.shape == (batch_size, tar_seq_len, d_model)
