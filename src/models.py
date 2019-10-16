@@ -11,15 +11,14 @@ from .embeddings import PositionalEmbeddings, SineEmbeddings, CosineEmbeddings
 # Define the model architecture with embedding layers and LSTM layers:
 class RNNModel(Module):
     def __init__(self, embedding_matrix, recurrent_type='LSTM', num_layers=1, rnn_hidden_size=64,
-                 attn_hidden_size=64, linear_hidden_size=32, attention_type=ConcatAttention, num_outputs=5):
+                 attn_hidden_size=64, attention_type=ConcatAttention, num_outputs=5):
         super().__init__()
         self.recurrent_type = recurrent_type
         self.embedding = Embedding.from_pretrained(embedding_matrix)
         self.rnn = getattr(nn, recurrent_type)(embedding_matrix.size(-1), rnn_hidden_size,
                     num_layers=num_layers, bidirectional=False, batch_first=True)
         self.attention = attention_type(rnn_hidden_size, attn_hidden_size)
-        self.linear = Linear(attn_hidden_size, linear_hidden_size)
-        self.out = Linear(linear_hidden_size, num_outputs)
+        self.out = Linear(rnn_hidden_size, num_outputs)
 
     def forward(self, x, return_weights=True):
         h_embedding = self.embedding(x)

@@ -25,9 +25,12 @@ class ConcatAttention(Module):
 
         if context is None:
             context = torch.zeros_like(encodings)
+        else:
+            context = context[-1].unsqueeze(-2).expand_as(encodings)
 
         scores = torch.tanh(self.W_a(torch.cat((encodings, context), dim=-1)))
         scores = self.v_a(scores)
+        print(scores.size())
 
         if mask is not None:
             scores = scores.masked_fill(mask.unsqueeze(-1), -1e10)
@@ -38,11 +41,11 @@ class ConcatAttention(Module):
         attended = torch.bmm(weights, encodings).squeeze(1)
 
         if return_weights:
-            return attended, weights
+            return attended, weights.view(batch_size, seq_len, 1)
         return attended
 
 
-class DotAttention(Module):
+class GeneralAttention(Module):
 
     def __init__(self, embedding_size, hidden_size):
         super().__init__()
@@ -54,8 +57,11 @@ class DotAttention(Module):
 
         if context is None:
             context = torch.ones_like(encodings)
+        else:
+            context = context[-1].unsqueeze(-2).expand_as(encodings)
 
         scores = self.W_a(encodings.contiguous(), context.contiguous())
+        print(scores.size())
 
         if mask is not None:
             scores = scores.masked_fill(mask.unsqueeze(-1), -1e10)
@@ -66,7 +72,38 @@ class DotAttention(Module):
         attended = torch.bmm(weights, encodings).squeeze(1)
 
         if return_weights:
-            return attended, weights
+            return attended, weights.view(batch_size, seq_len, 1)
+        return attended
+
+class DotAttention(Module):
+
+    def __init__(self, embedding_size, hidden_size):
+        super().__init__()
+        self.embedding_size = embedding_size
+
+    def forward(self, encodings, context=None, mask=None, return_weights=True):
+        batch_size, seq_len, _ = encodings.size()
+
+        if context is None:
+            context = torch.ones_like(encodings)
+        else:
+            context = context[-1].unsqueeze(-2).expand_as(encodings)
+
+        encodings = encodings.view(batch_size, seq_len, 1, -1)
+        context = encodings.view(batch_size, seq_len, -1, 1)
+        scores = torch.matmul(encodings, context).squeeze(-1)
+
+        if mask is not None:
+            scores = scores.masked_fill(mask.unsqueeze(-1), -1e10)
+
+        weights = torch.softmax(scores, dim=1)
+        weights = weights.view(batch_size, 1, seq_len)
+        encodings = encodings.view(batch_size, seq_len, -1)
+
+        attended = torch.bmm(weights, encodings).squeeze(1)
+
+        if return_weights:
+            return attended, weights.view(batch_size, seq_len, 1)
         return attended
 
 
@@ -76,17 +113,50 @@ class MeanAttention(Module):
         super().__init__()
 
     def forward(self, encodings, context=None, mask=None, return_weights=True):
+        batch_size, seq_len, _ = encodings.size()
         if mask is not None:
             mask = 1 - mask.unsqueeze(-1).float()
             weights = 1 / mask.sum(dim=-2, keepdim=True).expand_as(encodings)
             encodings = encodings * mask
         else:
-            weights = torch.full_like(encodings, 1 / encodings.size(-2))
+            weights = torch.full((batch_size, seq_len, 1), 1 / seq_len)
 
+        print(encodings.size(), weights.size())
         attended = (encodings * weights).sum(dim=-2)
+        print(attended.size())
 
         if return_weights:
             return attended, weights
+        return attended
+
+
+class LocationAttention(Module):
+
+    def __init__(self, embedding_size, hidden_size):
+        super().__init__()
+        self.embedding_size = embedding_size
+        self.W_a = Linear(embedding_size, 1)
+
+    def forward(self, encodings, context=None, mask=None, return_weights=True):
+        batch_size, seq_len, _ = encodings.size()
+
+        if context is None:
+            context = torch.ones_like(encodings)
+        else:
+            context = context[-1].unsqueeze(-2).expand_as(encodings)
+
+        scores = self.W_a(context)
+
+        if mask is not None:
+            scores = scores.masked_fill(mask.unsqueeze(-1), -1e10)
+
+        weights = torch.softmax(scores, dim=1)
+        weights = weights.view(batch_size, 1, seq_len)
+
+        attended = torch.bmm(weights, encodings).squeeze(1)
+
+        if return_weights:
+            return attended, weights.view(batch_size, seq_len, 1)
         return attended
 
 

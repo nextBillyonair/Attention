@@ -282,8 +282,11 @@ class MaskedCrossEntropyLoss(Module):
         super().__init__()
         self.criterion = CrossEntropyLoss(reduction='none')
 
-    def forward(self, predictions, targets, pad_tok=0.):
-        mask = (targets != pad_tok).float().reshape(-1)
+    def forward(self, predictions, targets, mask=None):
+        # mask = (targets != pad_tok).float().reshape(-1)
+        # use util function to make masks then forget about it
+        mask = (1 - mask) if mask is not None else torch.ones_like(targets).long()
+        mask = mask.reshape(-1)
         targets = targets.reshape(-1)
         predictions = predictions.reshape(-1, predictions.size(-1))
         loss = self.criterion(predictions, targets) * mask
