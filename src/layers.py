@@ -205,7 +205,7 @@ class Encoder(Module):
 
     def from_pretrained(self, embedding_matrix):
         if not isinstance(embedding_matrix, torch.Tensor):
-            embedding_matrix = torch.tensor(embedding_matrix)
+            embedding_matrix = torch.tensor(embedding_matrix).float()
         self.embedding = Embedding.from_pretrained(embedding_matrix)
 
 
@@ -246,7 +246,7 @@ class Decoder(Module):
 
     def from_pretrained(self, embedding_matrix):
         if not isinstance(embedding_matrix, torch.Tensor):
-            embedding_matrix = torch.tensor(embedding_matrix)
+            embedding_matrix = torch.tensor(embedding_matrix).float()
         self.embedding = Embedding.from_pretrained(embedding_matrix)
 
 
