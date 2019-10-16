@@ -22,15 +22,18 @@ class ConcatAttention(Module):
 
     def forward(self, encodings, context=None, mask=None, return_weights=True):
         batch_size, seq_len, _ = encodings.size()
+        # encodings.shape == (batch_size, seq_len, embedding_dim)
+        # mask.shape == (batch_size, seq_len) BOOL: 1 == PAD
 
         if context is None:
             context = torch.zeros_like(encodings)
         else:
             context = context[-1].unsqueeze(-2).expand_as(encodings)
+        # context.shape == (batch_size, seq_len, embedding_size) after expand
 
         scores = torch.tanh(self.W_a(torch.cat((encodings, context), dim=-1)))
         scores = self.v_a(scores)
-        print(scores.size())
+        # scores.shape == (batch_size, seq_len, 1)
 
         if mask is not None:
             scores = scores.masked_fill(mask.unsqueeze(-1).bool(), -1e10)
@@ -39,6 +42,7 @@ class ConcatAttention(Module):
         weights = weights.view(batch_size, 1, seq_len)
 
         attended = torch.bmm(weights, encodings).squeeze(1)
+        # attended.shape == (batch_size, embedding_dim)
 
         if return_weights:
             return attended, weights.view(batch_size, seq_len, 1)
@@ -54,14 +58,17 @@ class GeneralAttention(Module):
 
     def forward(self, encodings, context=None, mask=None, return_weights=True):
         batch_size, seq_len, _ = encodings.size()
+        # encodings.shape == (batch_size, seq_len, embedding_dim)
+        # mask.shape == (batch_size, seq_len) BOOL: 1 == PAD
 
         if context is None:
             context = torch.ones_like(encodings)
         else:
             context = context[-1].unsqueeze(-2).expand_as(encodings)
+        # context.shape == (batch_size, seq_len, embedding_size) after expand
 
         scores = self.W_a(encodings.contiguous(), context.contiguous())
-        print(scores.size())
+        # scores.shape == (batch_size, seq_len, 1)
 
         if mask is not None:
             scores = scores.masked_fill(mask.unsqueeze(-1).bool(), -1e10)
@@ -70,6 +77,7 @@ class GeneralAttention(Module):
         weights = weights.view(batch_size, 1, seq_len)
 
         attended = torch.bmm(weights, encodings).squeeze(1)
+        # attended.shape == (batch_size, embedding_dim)
 
         if return_weights:
             return attended, weights.view(batch_size, seq_len, 1)
@@ -83,24 +91,30 @@ class DotAttention(Module):
 
     def forward(self, encodings, context=None, mask=None, return_weights=True):
         batch_size, seq_len, _ = encodings.size()
+        # encodings.shape == (batch_size, seq_len, embedding_dim)
+        # mask.shape == (batch_size, seq_len) BOOL: 1 == PAD
 
         if context is None:
             context = torch.ones_like(encodings)
         else:
             context = context[-1].unsqueeze(-2).expand_as(encodings)
+        # context.shape == (batch_size, seq_len, embedding_size) after expand
 
+        # Reshapes to make matmul work with 4D
         encodings = encodings.view(batch_size, seq_len, 1, -1)
         context = encodings.view(batch_size, seq_len, -1, 1)
         scores = torch.matmul(encodings, context).squeeze(-1)
+        # scores.shape == (batch_size, seq_len, 1)
 
         if mask is not None:
             scores = scores.masked_fill(mask.unsqueeze(-1).bool(), -1e10)
 
         weights = torch.softmax(scores, dim=1)
         weights = weights.view(batch_size, 1, seq_len)
-        encodings = encodings.view(batch_size, seq_len, -1)
+        encodings = encodings.view(batch_size, seq_len, -1) # change back
 
         attended = torch.bmm(weights, encodings).squeeze(1)
+        # attended.shape == (batch_size, embedding_dim)
 
         if return_weights:
             return attended, weights.view(batch_size, seq_len, 1)
@@ -114,14 +128,19 @@ class MeanAttention(Module):
 
     def forward(self, encodings, context=None, mask=None, return_weights=True):
         batch_size, seq_len, _ = encodings.size()
+        # encodings.shape == (batch_size, seq_len, embedding_dim)
+        # mask.shape == (batch_size, seq_len) BOOL: 1 == PAD
+
         if mask is not None:
-            mask = 1 - mask.unsqueeze(-1).float()
+            mask = 1 - mask.unsqueeze(-1).float() # reverse mask
             weights = (1 / mask.sum(dim=-2, keepdim=True)) * mask
             encodings = encodings * mask
         else:
             weights = torch.full((batch_size, seq_len, 1), 1 / seq_len)
+        # weights.shape == (batch_size, seq_len, 1) # For broadcast
 
         attended = (encodings * weights).sum(dim=-2)
+        # attended.shape == (batch_size, embedding_dim)
 
         if return_weights:
             return attended, weights
@@ -135,6 +154,8 @@ class LastInSeqAttention(Module):
 
     def forward(self, encodings, context=None, mask=None, return_weights=True):
         # FIX MASK
+        # encodings.shape == (batch_size, seq_len, embedding_dim)
+        # RETURN last -> (batch_size, embedding_dim) (takes last slice in seq dim)
         if return_weights:
             return encodings[:, -1], None
         return encodings[:, -1]
