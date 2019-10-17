@@ -278,16 +278,11 @@ class Transformer(Module):
 
 class MaskedCrossEntropyLoss(Module):
 
-    def __init__(self):
+    def __init__(self, pad_tok=0):
         super().__init__()
-        self.criterion = CrossEntropyLoss(reduction='none')
+        self.criterion = CrossEntropyLoss(reduction='mean', ignore_index = pad_tok)
 
-    def forward(self, predictions, targets, mask=None):
-        # mask = (targets != pad_tok).float().reshape(-1)
-        # use util function to make masks then forget about it
-        mask = (1 - mask) if mask is not None else torch.ones_like(targets).long()
-        mask = mask.reshape(-1)
+    def forward(self, predictions, targets):
         targets = targets.reshape(-1)
         predictions = predictions.reshape(-1, predictions.size(-1))
-        loss = self.criterion(predictions, targets) * mask
-        return loss.sum() / mask.sum()
+        return self.criterion(predictions, targets)
