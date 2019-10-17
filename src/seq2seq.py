@@ -13,6 +13,7 @@ class Encoder(Module):
         self.enc_units = enc_units
         self.embedding_dim = embedding_dim
         self.num_layers = num_layers
+        self.vocab_size = vocab_size
         self.embedding = Embedding(vocab_size, embedding_dim)
         self.gru = GRU(embedding_dim, enc_units, num_layers=num_layers, batch_first=True)
 
@@ -38,6 +39,7 @@ class Decoder(Module):
         self.dec_units = dec_units
         self.embedding_dim = embedding_dim
         self.num_layers = num_layers
+        self.vocab_size = vocab_size
         self.embedding = Embedding(vocab_size, embedding_dim)
         self.gru = GRU(embedding_dim, dec_units, num_layers=num_layers, batch_first=True)
         self.fc = Linear(dec_units, vocab_size)
@@ -67,6 +69,7 @@ class AttentionDecoder(Module):
         self.dec_units = dec_units
         self.embedding_dim = embedding_dim
         self.num_layers = num_layers
+        self.vocab_size = vocab_size
         self.embedding = Embedding(vocab_size, embedding_dim)
         self.gru = GRU(embedding_dim + dec_units, dec_units, num_layers=num_layers, batch_first=True)
         self.attention = attn_layer(dec_units, attn_hidden_size)
@@ -104,12 +107,14 @@ class AttentionDecoder(Module):
 
 class Seq2Seq(Module):
 
-    def __init__(self, encoder, decoder, teacher_forcing=0., max_length=32):
+    def __init__(self, encoder, decoder, teacher_forcing=0., max_length=32, SOS_token=1):
         super().__init__()
         self.encoder = encoder
         self.decoder = decoder
+        self.target_vocab_size = decoder.vocab_size
         self.teacher_forcing = teacher_forcing
         self.max_length = max_length
+        self.SOS_token = SOS_token
 
     def forward(self, source, target=None, src_mask=None):
         # source.shape == (batch_size, source_length) LONG
@@ -122,7 +127,7 @@ class Seq2Seq(Module):
         # encoder_outputs.shape == (batch_size, source_length, enc_units)
         # state.shape == (encoder_num_layers, batch_size, enc_units)
 
-        decoder_input = torch.zeros(batch_size, 1).long() # Assumes SOS Tok == 0
+        decoder_input = torch.full((batch_size, 1), self.SOS_token).long() # Assumes SOS Tok == 1
         # decoder_input.shape == (batch_size, 1) LONG
         decoder_outputs, attention_weights = [], []
 
@@ -133,7 +138,6 @@ class Seq2Seq(Module):
                 attention_weights.append(attention_weight)
             # decoder_output.shape == (batch_size, 1, target_vocab_size)
             # attention_weight.shape == (batch_size, seq_len, 1) or None
-
 
             # Update input token to decoder
             _, decoder_input = decoder_output.topk(1)

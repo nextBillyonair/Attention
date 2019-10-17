@@ -186,6 +186,7 @@ class Encoder(Module):
 
         self.d_model = d_model
         self.num_layers = num_layers
+        self.vocab_size = input_vocab_size
         self.embedding = Embedding(input_vocab_size, d_model)
         self.pos_encoding = PositionalEmbeddings(d_model, rate, maximum_position_encoding)
 
@@ -219,6 +220,7 @@ class Decoder(Module):
 
         self.d_model = d_model
         self.num_layers = num_layers
+        self.vocab_size = target_vocab_size
 
         self.embedding = Embedding(target_vocab_size, d_model)
         self.pos_encoding = PositionalEmbeddings(d_model, rate, maximum_position_encoding)
@@ -283,7 +285,9 @@ class MaskedCrossEntropyLoss(Module):
         self.criterion = CrossEntropyLoss(reduction='mean', ignore_index = pad_tok)
 
     def forward(self, predictions, targets):
+        batch_size, tgt_seq_len = targets.size()
         targets = targets.reshape(-1)
+        predictions = predictions[:, :tgt_seq_len, :]
         predictions = predictions.reshape(-1, predictions.size(-1))
         return self.criterion(predictions, targets)
 
