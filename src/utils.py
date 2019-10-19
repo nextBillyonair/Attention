@@ -98,16 +98,18 @@ def preprocess_sentence(w):
     w = '<sos> ' + w + ' <eos>'
     return w
 
-def make_dataset(source_text, target_text, test_size=0.2, batch_size=32, max_vocab_size=10000):
-    source_text = [preprocess_sentence(t) for t in source_text]
-    target_text = [preprocess_sentence(t) for t in target_text]
-    src_train, src_test, tgt_train, tgt_test = train_test_split(source_text, target_text, test_size=test_size)
+def make_dataset(train_text, test_text, train_batch_size=32, test_batch_size=64, max_vocab_size=10000):
+    src_train = [preprocess_sentence(t) for t in train_text[0]]
+    src_test = [preprocess_sentence(t) for t in test_text[0]]
+    tgt_train = [preprocess_sentence(t) for t in train_text[1]]
+    tgt_test = [preprocess_sentence(t) for t in test_text[1]]
+    # src_train, src_test, tgt_train, tgt_test = train_test_split(source_text, target_text, test_size=test_size)
     src_vocab, tgt_vocab = Vocab(max_vocab_size), Vocab(max_vocab_size)
     src_vocab.build_vocab(src_train); tgt_vocab.build_vocab(tgt_train)
     src_train, src_test = src_vocab.to_sequence(src_train), src_vocab.to_sequence(src_test)
     tgt_train, tgt_test = tgt_vocab.to_sequence(tgt_train), tgt_vocab.to_sequence(tgt_test)
-    train_loader = DataLoader(TensorDataset(src_train, tgt_train), batch_size=batch_size, shuffle=True)
-    test_loader = DataLoader(TensorDataset(src_test, tgt_test), batch_size=batch_size, shuffle=True)
+    train_loader = DataLoader(TensorDataset(src_train, tgt_train), batch_size=train_batch_size, shuffle=True)
+    test_loader = DataLoader(TensorDataset(src_test, tgt_test), batch_size=test_batch_size, shuffle=True)
     return src_vocab, tgt_vocab, train_loader, test_loader
 
 ##########################
@@ -121,10 +123,19 @@ def train(model, iterator, optimizer, criterion, clip=1, pad_tok=0):
         # tgt.shape = (batch_size, tgt_seq_len)
         src_mask = create_padding_mask(src, pad_tok)
 
-        output, attention = model(src, tgt, src_mask=src_mask)
-        # output.shape == (batch_size, tgt_seq_len, tgt_vocab_size)
+        if model.type == 'rnn':
+            output, _ = model(src, tgt, src_mask=src_mask)
+            # output.shape == (batch_size, tgt_seq_len, tgt_vocab_size)
+            # output = output[:, 1:, :]
+            tgt = tgt[:, 1:]
+            # loss = criterion(output, tgt)
+        elif model.type == 'conv':
+            output, _ = model(src, tgt[:,:-1])
+            tgt = tgt[:,1:]
 
         loss = criterion(output, tgt)
+
+
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
 
@@ -144,8 +155,16 @@ def evaluate(model, iterator, criterion, pad_tok=0):
             # tgt.shape = (batch_size, tgt_seq_len)
             src_mask = create_padding_mask(src, pad_tok)
 
-            output, attention = model(src, None, src_mask) #turn off teacher forcing
-            # output.shape == (batch_size, max_length, tgt_vocab_size)
+            if model.type == 'rnn':
+                output, attention = model(src, None, src_mask) #turn off teacher forcing
+                # output.shape == (batch_size, max_length, tgt_vocab_size)
+                # print(output)
+                # output = output[:, 1:, :]
+                tgt = tgt[:, 1:]
+            elif model.type == 'conv':
+                output, attention = model(src, tgt) #turn off teacher forcing
+                tgt = tgt[:, 1:]
+
             loss = criterion(output, tgt) # masked loss automatically slices for you
 
             epoch_loss += loss.item()
@@ -154,17 +173,22 @@ def evaluate(model, iterator, criterion, pad_tok=0):
 
 
 def translate(sentence, model, src_vocab, tgt_vocab, pad_tok=0):
-    model.eval()
-    if type(sentence) == str:
-        sentence = [sentence]
-    tokenized_sentence = [preprocess_sentence(sent) for sent in sentence]
-    tensor = src_vocab.to_sequence(tokenized_sentence)
-    tokenized_sent = src_vocab.to_string(tensor, remove_special=True)[0]
-    mask = create_padding_mask(tensor, pad_tok)
-    translation_tensor_logits, attention = model(tensor, None, mask)
-    translation_tensor = torch.argmax(translation_tensor_logits, dim=-1)
-    translation = tgt_vocab.to_string(translation_tensor, remove_special=True)[0]
-    return translation, attention.detach().squeeze(0)[:len(translation.split()),:len(tokenized_sent.split())]
+    with torch.no_grad():
+        model.eval()
+        if type(sentence) == str:
+            sentence = [sentence]
+        tokenized_sentence = [preprocess_sentence(sent) for sent in sentence]
+        tensor = src_vocab.to_sequence(tokenized_sentence)
+        tokenized_sent = src_vocab.to_string(tensor, remove_special=True)[0]
+        mask = create_padding_mask(tensor, pad_tok)
+        print(tensor)
+        translation_tensor_logits, attention = model(tensor, None, mask)
+        translation_tensor = torch.argmax(translation_tensor_logits, dim=-1)
+        print(translation_tensor)
+        translation = tgt_vocab.to_string(translation_tensor, remove_special=True)[0]
+        if attention is not None:
+            attention = attention.detach().squeeze(0)[:len(translation.split()),:len(tokenized_sent.split())]
+        return translation, attention
 
 def plot_attention(attention, sentence, predicted_sentence):
     fig = plt.figure(figsize=(10,10))
@@ -186,4 +210,4 @@ def load_data(lang1='en', lang2='de'):
     tgt_train = [line.rstrip('\n') for line in open(f"{train}{lang2}")]
     src_test = [line.rstrip('\n') for line in open(f"{val}{lang1}")]
     tgt_test = [line.rstrip('\n') for line in open(f"{val}{lang2}")]
-    return src_train + src_test, tgt_train + tgt_test
+    return (src_train, tgt_train), (src_test, tgt_test)

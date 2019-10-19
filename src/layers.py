@@ -265,6 +265,7 @@ class Transformer(Module):
                                target_vocab_size, pe_target, rate)
 
         self.final_layer = Linear(d_model, target_vocab_size)
+        self.type = 'transformer'
 
     def forward(self, input, target, enc_padding_mask=None,
                 look_ahead_mask=None, dec_padding_mask=None):
@@ -282,10 +283,12 @@ class MaskedCrossEntropyLoss(Module):
 
     def __init__(self, pad_tok=0):
         super().__init__()
-        self.criterion = CrossEntropyLoss(reduction='mean', ignore_index = pad_tok)
+        self.criterion = CrossEntropyLoss(ignore_index = pad_tok)
 
     def forward(self, predictions, targets):
         batch_size, tgt_seq_len = targets.size()
+        # targets = targets[:, 1:] #remove SOS
+        # predictions = predictions[:, 1:]
         targets = targets.reshape(-1)
         predictions = predictions[:, :tgt_seq_len, :]
         predictions = predictions.reshape(-1, predictions.size(-1))

@@ -115,6 +115,7 @@ class Seq2Seq(Module):
         self.teacher_forcing = teacher_forcing
         self.max_length = max_length
         self.SOS_token = SOS_token
+        self.type = 'rnn'
 
     def forward(self, source, target=None, src_mask=None):
         # source.shape == (batch_size, source_length) LONG
@@ -129,29 +130,23 @@ class Seq2Seq(Module):
 
         decoder_input = torch.full((batch_size, 1), self.SOS_token).long() # Assumes SOS Tok == 1
         # decoder_input.shape == (batch_size, 1) LONG
-        decoder_outputs, attention_weights = [], []
+        decoder_outputs = torch.zeros(batch_size, target_length, self.target_vocab_size)
+        attention_weights = torch.zeros(batch_size, source_length, target_length)
 
         for i in range(target_length):
             decoder_output, state, attention_weight = self.decoder(decoder_input, state, encoder_outputs, src_mask)
-            decoder_outputs.append(decoder_output)
+            decoder_outputs[:, i:i+1, :] = decoder_output
             if attention_weight is not None:
-                attention_weights.append(attention_weight)
+                attention_weights[:, :, i:i+1] = attention_weight
             # decoder_output.shape == (batch_size, 1, target_vocab_size)
             # attention_weight.shape == (batch_size, seq_len, 1) or None
 
             # Update input token to decoder
-            _, decoder_input = decoder_output.topk(1)
-            decoder_input = decoder_input.squeeze(1).detach()
+            decoder_input = decoder_output.argmax(dim=-1).detach()
             if target is not None and random.random() < self.teacher_forcing:
-                decoder_input = target[:, i].unsqueeze(1)
+                decoder_input = target[:, i:i+1]
             # decoder_input.shape == (batch_size, 1) LONG
 
-        decoder_outputs = torch.cat(decoder_outputs, dim=-2) # cat on seq dim
         # decoder_outputs.shape == (batch_size, target_seq_len, target_vocab_size)
-        if len(attention_weights) != 0:
-            attention_weights = torch.cat(attention_weights, dim=-1).transpose(1, 2) # cat on last dim
-            # attention_weights.shape == (batch_size, target_seq_len, source_seq_len)
-        else:
-            attention_weights = None
-
-        return decoder_outputs, attention_weights
+        # attention_weights.shape == (batch_size, target_seq_len, source_seq_len)
+        return decoder_outputs, attention_weights.transpose(1, 2)
