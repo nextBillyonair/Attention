@@ -130,7 +130,9 @@ def train(model, iterator, optimizer, criterion, clip=1, pad_tok=0):
             tgt = tgt[:, 1:]
             # loss = criterion(output, tgt)
         elif model.type == 'conv':
-            output, _ = model(src, tgt[:,:-1])
+            output, _ = model(src, tgt)
+            # print(output.size())
+            # print(tgt.size(), tgt[:,1:].size())
             tgt = tgt[:,1:]
 
         loss = criterion(output, tgt)
@@ -162,7 +164,7 @@ def evaluate(model, iterator, criterion, pad_tok=0):
                 # output = output[:, 1:, :]
                 tgt = tgt[:, 1:]
             elif model.type == 'conv':
-                output, attention = model(src, tgt) #turn off teacher forcing
+                output, attention = model(src, None) #turn off teacher forcing
                 tgt = tgt[:, 1:]
 
             loss = criterion(output, tgt) # masked loss automatically slices for you
@@ -211,3 +213,12 @@ def load_data(lang1='en', lang2='de'):
     src_test = [line.rstrip('\n') for line in open(f"{val}{lang1}")]
     tgt_test = [line.rstrip('\n') for line in open(f"{val}{lang2}")]
     return (src_train, tgt_train), (src_test, tgt_test)
+
+def load_summary(N=2000):
+    src = './data/sumdata/train/train.article.txt'
+    tgt = './data/sumdata/train/train.title.txt'
+    with open(src) as src_file:
+        src_train = [next(src_file).rstrip('\n') for _ in range(N)]
+    with open(tgt) as tgt_file:
+        tgt_train = [next(tgt_file).rstrip('\n') for _ in range(N)]
+    return src_train, tgt_train

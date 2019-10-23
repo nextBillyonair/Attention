@@ -4,6 +4,7 @@ from torch.nn import (
     Embedding, Linear, Dropout, Conv1d
 )
 import torch.nn.functional as F
+import random
 
 class EncoderConv(Module):
 
@@ -209,12 +210,13 @@ class Decoder(Module):
 
 class Seq2Seq(Module):
 
-    def __init__(self, encoder, decoder, max_len=50, SOS_token=1):
+    def __init__(self, encoder, decoder, teacher_forcing=0.1, max_len=50, SOS_token=1):
         super().__init__()
         self.encoder = encoder
         self.decoder = decoder
         self.max_len = max_len
         self.SOS_token = SOS_token
+        self.teacher_forcing = teacher_forcing
         self.type = 'conv'
 
     def forward(self, src, tgt=None, src_mask=None):
@@ -226,8 +228,8 @@ class Seq2Seq(Module):
         # encoder_conved.shape == (batch_size, src_seq_len, embedding_dim)
         # encoder_combined.shape == (batch_size, src_seq_len, embedding_dim)
 
-        # diverge for train/inference:
-        if tgt is not None:
+        # diverge for train/inference: # should have for 1.0 teacher forcing
+        if tgt is not None and self.teacher_forcing == 1.0:
             decoder_outputs, attention_weights = self.decoder(tgt, encoder_conved, encoder_combined)
             # output.shape == (batch_size, tgt_seq_len, tgt_vocab_size)
             # attention == (batch_size, tgt_seq_len, src_seq_len)
@@ -235,7 +237,7 @@ class Seq2Seq(Module):
             decoder_input = torch.full((batch_size, 1), self.SOS_token).long()
             decoder_outputs, attention_weights = [], []
 
-            for i in range(self.max_len):
+            for i in range(1, self.max_len):
                 decoder_output, attention_weight = self.decoder(decoder_input, encoder_conved, encoder_combined)
                 # decoder_output == (batch_size, i+1, tgt_vocab_size)
                 # attention_weight == (batch_size, src_seq_len, i)
@@ -243,14 +245,16 @@ class Seq2Seq(Module):
                 attention_weights.append(attention_weight[:, :, -1].unsqueeze(2))
                 pred_token = decoder_output.argmax(dim=-1)[:, -1].unsqueeze(1).detach()
                 # print(pred_token)
+                if tgt is not None and random.random() < self.teacher_forcing:
+                    pred_token = tgt[:, i:i+1]
                 decoder_input = torch.cat((decoder_input, pred_token), dim=-1)
                 # decoder_input = (batch_size, i + 1)
 
             decoder_outputs = torch.cat(decoder_outputs, dim=-2)
             attention_weights = torch.cat(attention_weights, dim=-1).transpose(1, 2)
-            # decoder_outputs == (batch_size, max_len, tgt_vocab_size)
-            # attention_weights == (batch_size, max_len, src_seq_len)
-            # print(decoder_outputs.size(), attention_weights.size())
+        # decoder_outputs == (batch_size, max_len, tgt_vocab_size)
+        # attention_weights == (batch_size, max_len, src_seq_len)
+        # print(decoder_outputs.size(), attention_weights.size())
         return decoder_outputs, attention_weights
 
 # EOF

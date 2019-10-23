@@ -130,14 +130,13 @@ class Seq2Seq(Module):
 
         decoder_input = torch.full((batch_size, 1), self.SOS_token).long() # Assumes SOS Tok == 1
         # decoder_input.shape == (batch_size, 1) LONG
-        decoder_outputs = torch.zeros(batch_size, target_length, self.target_vocab_size)
-        attention_weights = torch.zeros(batch_size, source_length, target_length)
+        decoder_outputs, attention_weights = [], []
 
-        for i in range(target_length):
+        for i in range(1, target_length):
             decoder_output, state, attention_weight = self.decoder(decoder_input, state, encoder_outputs, src_mask)
-            decoder_outputs[:, i:i+1, :] = decoder_output
+            decoder_outputs.append(decoder_output)
             if attention_weight is not None:
-                attention_weights[:, :, i:i+1] = attention_weight
+                attention_weights.append(attention_weight)
             # decoder_output.shape == (batch_size, 1, target_vocab_size)
             # attention_weight.shape == (batch_size, seq_len, 1) or None
 
@@ -149,4 +148,6 @@ class Seq2Seq(Module):
 
         # decoder_outputs.shape == (batch_size, target_seq_len, target_vocab_size)
         # attention_weights.shape == (batch_size, target_seq_len, source_seq_len)
-        return decoder_outputs, attention_weights.transpose(1, 2)
+        decoder_outputs = torch.cat(decoder_outputs, dim=-2)
+        attention_weights = torch.cat(attention_weights, dim=-1).transpose(1, 2)
+        return decoder_outputs, attention_weights
