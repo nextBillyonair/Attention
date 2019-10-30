@@ -1,0 +1,168 @@
+\documentclass{beamer}
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{tikz}
+\usetikzlibrary{calc}
+\usetikzlibrary{bayesnet}
+\usetikzlibrary{arrows}
+\usepackage{color}
+\usepackage{array}
+\usepackage{dsfont}
+\usepackage{multirow, graphicx}
+ \usepackage{float}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\arraybackslash}p{#1}}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\usepackage{caption}
+\usepackage{subfig}
+\usepackage{pifont}
+\usepackage{xcolor}
+\usepackage{algorithm,algorithmic}
+% \floatname{algorithm}{Procedure}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\newcommand{\cmark}{\textcolor{green!80!black}{\ding{51}}}
+\newcommand{\xmark}{\textcolor{red}{\ding{55}}}
+\DeclareMathOperator*{\argmin}{argmin}
+\urlstyle{same}
+\usepackage{listings}
+% \usetheme{Boadilla}
+
+\title{Attention is All You Need}
+% \subtitle{Using Beamer}
+\author{Bill Watson}
+\institute{S\&P Global}
+\date{November 22, 2019}
+
+\newenvironment{nospaceflalign*}
+ {\setlength{\abovedisplayskip}{0pt}\setlength{\belowdisplayskip}{0pt}%
+  \csname flalign*\endcsname}
+ {\csname endflalign*\endcsname\ignorespacesafterend}
+
+\AtBeginSection[]{
+  \begin{frame}
+  \vfill
+  \centering
+  \begin{beamercolorbox}[sep=8pt,center,shadow=true,rounded=true]{title}
+    \usebeamerfont{title}\insertsectionhead\par%
+  \end{beamercolorbox}
+  \vfill
+  \end{frame}
+}
+
+\begin{document}
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Recap: Encoder-Decoder Models}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{How can we improve this model?}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{(Naive) Attention Mechanisms}
+
+\begin{frame}
+\frametitle{Mean Attention}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Location Based: Laplace}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Location Based: Gaussian}
+
+\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{(Complex) Attention Mechanisms}
+
+\begin{frame}
+\frametitle{What are Context Vectors?}
+
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Bahdanau Attention}
+
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Luong Attention}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{More Madness}
+
+\begin{frame}
+\frametitle{Fine-Grained Attention}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Multi-Headed Attention}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Self Attention}
+
+\end{frame}
+
+\section{Practical Considerations}
+
+\begin{frame}
+\frametitle{Masking}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Which one to use?}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Mixing and Matching}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Tools, References, and Further Reading}
+
+
+\begin{frame}
+\frametitle{Refrences \& Further Reading}
+  \begin{itemize}
+    \item \href{https://www.cs.ubc.ca/~murphyk/MLbook/}{Machine Learning: A Probabilistic Perspective by Kevin Murphy}
+  \end{itemize}
+\end{frame}
+
+
+% Refs, ideas, etc
+
+
+\end{document}
