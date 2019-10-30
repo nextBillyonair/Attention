@@ -122,6 +122,7 @@ def train(model, iterator, optimizer, criterion, clip=1, pad_tok=0):
         # src.shape = (batch_size, src_seq_len)
         # tgt.shape = (batch_size, tgt_seq_len)
         src_mask = create_padding_mask(src, pad_tok)
+        src_mask, look_ahead_mask, dec_padding_mask = create_masks(src, tgt, pad_tok)
 
         if model.type == 'rnn':
             output, _ = model(src, tgt, src_mask=src_mask)
@@ -133,6 +134,9 @@ def train(model, iterator, optimizer, criterion, clip=1, pad_tok=0):
             output, _ = model(src, tgt)
             # print(output.size())
             # print(tgt.size(), tgt[:,1:].size())
+            tgt = tgt[:,1:]
+        elif model.type == 'transformer':
+            output, _ = model(src, tgt, src_mask, look_ahead_mask, dec_padding_mask)
             tgt = tgt[:,1:]
 
         loss = criterion(output, tgt)
@@ -156,6 +160,7 @@ def evaluate(model, iterator, criterion, pad_tok=0):
             # src.shape = (batch_size, src_seq_len)
             # tgt.shape = (batch_size, tgt_seq_len)
             src_mask = create_padding_mask(src, pad_tok)
+            src_mask, look_ahead_mask, dec_padding_mask = create_masks(src, tgt, pad_tok)
 
             if model.type == 'rnn':
                 output, attention = model(src, None, src_mask) #turn off teacher forcing
@@ -166,6 +171,9 @@ def evaluate(model, iterator, criterion, pad_tok=0):
             elif model.type == 'conv':
                 output, attention = model(src, None) #turn off teacher forcing
                 tgt = tgt[:, 1:]
+            elif model.type == 'transformer':
+                output, _ = model(src, tgt, src_mask, look_ahead_mask, dec_padding_mask)
+                tgt = tgt[:,1:]
 
             loss = criterion(output, tgt) # masked loss automatically slices for you
 

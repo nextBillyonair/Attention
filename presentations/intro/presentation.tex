@@ -1,0 +1,287 @@
+\documentclass{beamer}
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{tikz}
+\usetikzlibrary{calc}
+\usetikzlibrary{bayesnet}
+\usetikzlibrary{arrows}
+\usepackage{color}
+\usepackage{array}
+\usepackage{dsfont}
+\usepackage{multirow, graphicx}
+ \usepackage{float}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\arraybackslash}p{#1}}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\usepackage{caption}
+\usepackage{subfig}
+\usepackage{pifont}
+\usepackage{xcolor}
+\usepackage{algorithm,algorithmic}
+% \floatname{algorithm}{Procedure}
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\newcommand{\cmark}{\textcolor{green!80!black}{\ding{51}}}
+\newcommand{\xmark}{\textcolor{red}{\ding{55}}}
+\DeclareMathOperator*{\argmin}{argmin}
+\urlstyle{same}
+\usepackage{listings}
+% \usetheme{Boadilla}
+
+\title{Introduction to Seq2Seq Modeling}
+% \subtitle{Using Beamer}
+\author{Bill Watson}
+\institute{S\&P Global}
+\date{November 22, 2019}
+
+\newenvironment{nospaceflalign*}
+ {\setlength{\abovedisplayskip}{0pt}\setlength{\belowdisplayskip}{0pt}%
+  \csname flalign*\endcsname}
+ {\csname endflalign*\endcsname\ignorespacesafterend}
+
+\AtBeginSection[]{
+  \begin{frame}
+  \vfill
+  \centering
+  \begin{beamercolorbox}[sep=8pt,center,shadow=true,rounded=true]{title}
+    \usebeamerfont{title}\insertsectionhead\par%
+  \end{beamercolorbox}
+  \vfill
+  \end{frame}
+}
+
+\begin{document}
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+
+\begin{frame}
+\frametitle{What are Sequence to Sequence Models?}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Common Applications for Seq2Seq Models}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Encoder-Decoder Archectecture}
+
+\begin{frame}
+\frametitle{Overview: Encoders and Decoders}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{What makes an Encoder?}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{What makes a Decoder?}
+
+\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Word Embeddings: Practical Considerations}
+
+\begin{frame}
+\frametitle{Recap: Word Embeddings}
+
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Recap: Pretrained Word Embeddings}
+
+\end{frame}
+
+
+\begin{frame}
+\frametitle{DIY Embeddings}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Special Tokens for Sequence Modeling}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Mangaging the Vocab Size}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Morphology, Compounding, and Transliteration}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Handling Numbers}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Factored Decomposition}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Backoff}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Character Models}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{BPE Subwords}
+
+\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Modeling Recurrent Relations}
+
+\begin{frame}
+\frametitle{Recap: Recurrent Layers}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Vanilla RNNs}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Long Short Term Memory (LSTM)}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Gated Recurrent Units (GRU)}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Aside: The Influence of Padding in RNNs}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Right to Left Sequence Modeling}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Bidirectional Sequence Modeling}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Putting together an Encoder}
+
+\begin{frame}
+\frametitle{The Components of an Encoder}
+
+\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Putting together an Decoder}
+
+\begin{frame}
+\frametitle{The Components of a Decoder}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Connecting the Encoder}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Decoder Inference: Making Predictions}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Teacher Forcing}
+
+\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Training Considerations}
+
+\begin{frame}
+\frametitle{Increasing Throughput through Batching}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Label Smoothing}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Masked Loss}
+
+\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Decoding: Making better Translations}
+
+\begin{frame}
+\frametitle{Beam Search}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Monte Carlo Beam Search}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Ensembling}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Reranking}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Tools, References, and Further Reading}
+
+
+\begin{frame}
+\frametitle{Refrences \& Further Reading}
+  \begin{itemize}
+    \item \href{https://www.cs.ubc.ca/~murphyk/MLbook/}{Machine Learning: A Probabilistic Perspective by Kevin Murphy}
+  \end{itemize}
+\end{frame}
+
+
+% Refs, ideas, etc
+
+
+\end{document}
