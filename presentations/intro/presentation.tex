@@ -1,4 +1,4 @@
-\documentclass{beamer}
+\documentclass[usenames,dvipsnames]{beamer}
 \usepackage[utf8]{inputenc} % allow utf-8 input
 \usepackage[T1]{fontenc}    % use 8-bit T1 fonts
 \usepackage{hyperref}       % hyperlinks
@@ -9,6 +9,7 @@
 \usepackage{microtype}      % microtypography
 \usepackage{amsmath}
 \usepackage{mathtools}
+\usepackage{xcolor}
 \usepackage{tikz}
 \usetikzlibrary{calc}
 \usetikzlibrary{bayesnet}
@@ -24,7 +25,6 @@
 \usepackage{caption}
 \usepackage{subfig}
 \usepackage{pifont}
-\usepackage{xcolor}
 \usepackage{algorithm,algorithmic}
 % \floatname{algorithm}{Procedure}
 \renewcommand{\algorithmicrequire}{\textbf{Input:}}
@@ -32,9 +32,13 @@
 \newcommand{\cmark}{\textcolor{green!80!black}{\ding{51}}}
 \newcommand{\xmark}{\textcolor{red}{\ding{55}}}
 \DeclareMathOperator*{\argmin}{argmin}
+\DeclareMathOperator*{\argmax}{argmax}
 \urlstyle{same}
 \usepackage{listings}
 \usepackage[export]{adjustbox}
+\usepackage{inconsolata}
+
+
 % \usetheme{Boadilla}
 
 \title{Introduction to Seq2Seq Modeling}
@@ -69,16 +73,11 @@
 \begin{frame}
 \frametitle{What are Sequence to Sequence Models?}
 \begin{itemize}
-  \item
-\end{itemize}
-\end{frame}
-
-\begin{frame}
-\frametitle{Common Applications for Seq2Seq Models}
-\begin{itemize}
-  \item Machine Translation
-  \item Speech Recognition
-  \item Text Summarization
+  \item Generally used to convert one set of tokens into another
+  \begin{itemize}
+    \item Many - to - Many RNN
+  \end{itemize}
+  \item Bleak view: map a sequence of indexes to another independent set of indexes
 \end{itemize}
 \end{frame}
 
@@ -103,32 +102,50 @@
 
 \begin{frame}
 \frametitle{Overview: Encoders and Decoders}
+\begin{figure}
+  \centering
+  \includegraphics[width=10cm, valign=c]{assets/enc-dec}
+\end{figure}
 \begin{itemize}
-  \item Encapsulation allows for flexible design choices:
-  \begin{itemize}
-    \item Embeddings
+  \item Encapsulation allows for flexible design choices
+  \item \textbf{Embeddings}
     \begin{itemize}
       \item Pre-trained
       \item DIY
     \end{itemize}
-    \item Recurrent Layer
+  \item \textbf{Recurrent Layer}
     \begin{itemize}
       \item Type
       \item Depth
       \item Directionality
     \end{itemize}
-  \end{itemize}
 \end{itemize}
 \end{frame}
 
 \begin{frame}
 \frametitle{What makes an Encoder?}
-
+\begin{figure}
+  \centering
+  \includegraphics[width=10cm, valign=c]{assets/encoder}
+\end{figure}
+\begin{itemize}
+  \item Recall: \textbf{Encoders} give the source sentence meaning
+  \item Effectively a language model, without a layer to predict the next word
+  \item Idea is to pass on the hidden state, and possibly use the encodings directly
+\end{itemize}
 \end{frame}
 
 \begin{frame}
 \frametitle{What makes a Decoder?}
-
+\begin{figure}
+  \centering
+  \includegraphics[width=8cm, valign=c]{assets/decoder}
+\end{figure}
+\begin{itemize}
+  \item Recall: \textbf{Decoders} provide a new sequence conditioned on the Encoder's hidden state
+  \item Starts with the Encoder's hidden state, and predicts one token at a time
+  \item Refeed the predicted token back into the decoder
+\end{itemize}
 \end{frame}
 
 
@@ -136,8 +153,24 @@
 \section{Word Embeddings: Practical Considerations}
 
 \begin{frame}
-\frametitle{Recap: Word Embeddings}
-
+  \frametitle{Recap: Word Embeddings}
+  \begin{equation*}
+    \begin{array}{rc}
+      \textcolor{Fuchsia}{\texttt{the}} & \rightarrow \\
+      \textcolor{WildStrawberry}{\texttt{cat}} & \rightarrow \\
+      \textcolor{BurntOrange}{\texttt{is}} & \rightarrow \\
+      \textcolor{Emerald}{\texttt{black}} & \rightarrow \\
+    \end{array}
+    \begin{bmatrix*}[r]
+          \textcolor{Fuchsia}{\texttt{1.23}} & \textcolor{Fuchsia}{\texttt{-0.58}} & \textcolor{Fuchsia}{\texttt{0.22}} & \textcolor{Fuchsia}{\texttt{-0.80}} & \textcolor{Fuchsia}{\texttt{0.61}} \\
+          \textcolor{WildStrawberry}{\texttt{-1.10}} & \textcolor{WildStrawberry}{\texttt{1.23}} & \textcolor{WildStrawberry}{\texttt{0.17}} & \textcolor{WildStrawberry}{\texttt{-0.21}} & \textcolor{WildStrawberry}{\texttt{1.43}} \\
+          \textcolor{BurntOrange}{\texttt{-0.26}} & \textcolor{BurntOrange}{\texttt{0.70}} & \textcolor{BurntOrange}{\texttt{0.27}} & \textcolor{BurntOrange}{\texttt{0.59}} & \textcolor{BurntOrange}{\texttt{-1.04}} \\
+          \textcolor{Emerald}{\texttt{-1.13}} & \textcolor{Emerald}{\texttt{-0.81}} & \textcolor{Emerald}{\texttt{-0.53}} & \textcolor{Emerald}{\texttt{-0.59}} & \textcolor{Emerald}{\texttt{0.26}} \\
+    \end{bmatrix*}
+  \end{equation*}
+  \begin{itemize}
+    \item A trick to map tokens to vector representations
+  \end{itemize}
 \end{frame}
 
 
@@ -166,25 +199,44 @@
 \begin{frame}
 \frametitle{Special Tokens for Sequence Modeling}
 \begin{itemize}
-  \item PAD $\rightarrow$ Padding / Masking
-  \item UNK $\rightarrow$ Unkown words
-  \item SOS $\rightarrow$ Start of Sentence
-  \item EOS $\rightarrow$ End of Sentence
+  \item $\textcolor{WildStrawberry}{\langle \texttt{PAD} \rangle}$ $\rightarrow$ Padding / Masking
+  \item $\textcolor{Periwinkle}{\langle \texttt{UNK} \rangle}$ $\rightarrow$ Unknown words
+  \item $\textcolor{ForestGreen}{\langle \texttt{SOS} \rangle}$ $\rightarrow$ Start of Sentence
+  \item $\textcolor{BrickRed}{\langle \texttt{EOS} \rangle}$ $\rightarrow$ End of Sentence
 \end{itemize}
+\vspace{5mm}
+\begin{equation*}
+  \centering
+  \begin{array}{cccccccc}
+    \textcolor{ForestGreen}{\langle \texttt{SOS} \rangle} & \texttt{Data} & \texttt{Science} & \texttt{is} & \texttt{the} & \textcolor{Periwinkle}{\langle \texttt{UNK} \rangle} & \texttt{!} & \textcolor{BrickRed}{\langle \texttt{EOS} \rangle} \\
+    \textcolor{ForestGreen}{\langle \texttt{SOS} \rangle} & \texttt{I}      & \textcolor{Periwinkle}{\langle \texttt{UNK} \rangle} & \texttt{for} & \texttt{S\&P} & . & \textcolor{BrickRed}{\langle \texttt{EOS} \rangle} & \textcolor{WildStrawberry}{\langle \texttt{PAD} \rangle}  \\
+    \textcolor{ForestGreen}{\langle \texttt{SOS} \rangle} & \texttt{Hello}  & \texttt{World} & ! & \textcolor{BrickRed}{\langle \texttt{EOS} \rangle} & \textcolor{WildStrawberry}{\langle \texttt{PAD} \rangle} & \textcolor{WildStrawberry}{\langle \texttt{PAD} \rangle} & \textcolor{WildStrawberry}{\langle \texttt{PAD} \rangle}
+  \end{array}
+\end{equation*}
 \end{frame}
 
 \begin{frame}
 \frametitle{Mangaging the Vocab Size}
-\begin{itemize}
-  \item Languages are unevely distributed
-  \item Many rare words, names $\rightarrow$ inflates the size of the vocabulary
-  \item \textbf{Problem:}
-  \begin{itemize}
-    \item Large embedding matricies for source, target language
-    \item Large output layers for prediction and softmax
-  \end{itemize}
-  \item Naive Solution: Limit the vocab size to most frequent
-\end{itemize}
+\begin{columns}
+  \begin{column}{0.45\textwidth}
+    \begin{itemize}
+      \item Languages are unevely distributed
+      \item Many rare words, names $\rightarrow$ inflates the size of the vocabulary
+      \item \textbf{Problem:}
+      \begin{itemize}
+        \item Large embedding matricies for source, target language
+        \item Large output layers for prediction and softmax
+      \end{itemize}
+      \item Naive Solution: Limit the vocab size to most frequent
+    \end{itemize}
+  \end{column}
+  \begin{column}{0.45\textwidth}
+    \begin{figure}
+      \centering
+      \includegraphics[height=4.5cm, valign=c]{assets/zipf}
+    \end{figure}
+  \end{column}
+\end{columns}
 % graph of zipfs law
 \end{frame}
 
@@ -193,16 +245,16 @@
 \begin{itemize}
   \item Morphological Analysis
   \begin{equation*}
-    tweet, tweets, tweeted, tweeting, retweet, \hdots
+    \textcolor{Fuchsia}{tweet, tweets, tweeted, tweeting, retweet, \hdots}
   \end{equation*}
   \item Compund Splitting
   \begin{itemize}
-    \item homework $\rightarrow$ home work
-    \item website $\rightarrow$ web site
+    \item \textcolor{Fuchsia}{homework} $\rightarrow$ \textcolor{Fuchsia}{home$\cdotp$work}
+    \item \textcolor{Fuchsia}{website} $\rightarrow$ \textcolor{Fuchsia}{web$\cdotp$site}
   \end{itemize}
   \item Names, Places, Proper Nouns
   \begin{itemize}
-    \item Hoboken, Baltimore, Obama, Michelle
+    \item \textcolor{Fuchsia}{Hoboken, Baltimore, Obama, Michelle}
     \item Can do Transliteration
   \end{itemize}
 \end{itemize}
@@ -212,57 +264,134 @@
 \frametitle{Handling Numbers}
 \begin{itemize}
   \item Do we really need to encode every number? \textbf{NO!}
+\end{itemize}
   \begin{equation*}
-    \text{I pay 950.00 in May 2007} > \text{I pay 2007 in May 950.00}
+    \texttt{I pay 950.00 in May 2007} \;>\; \texttt{I pay 2007 in May 950.00}
   \end{equation*}
   \pause
-  \item Solution 1: Replace with a NUM token, but
+\begin{itemize}
+  \item \textbf{Solution 1:} Replace with a $\textcolor{Fuchsia}{\langle \texttt{NUM} \rangle }$ token, but
+\end{itemize}
   \begin{equation*}
-    \text{I pay NUM in May NUM} = \text{I pay NUM in May NUM}
+    \texttt{I pay $\textcolor{Fuchsia}{\langle \texttt{NUM} \rangle }$ in May $\textcolor{Fuchsia}{\langle \texttt{NUM} \rangle }$} \;=\; \texttt{I pay $\textcolor{Fuchsia}{\langle \texttt{NUM} \rangle }$ in May $\textcolor{Fuchsia}{\langle \texttt{NUM} \rangle }$}
   \end{equation*}
   \pause
-  \item Solution 2: Replace each digit with a unique symbol, e.g. 5
+\begin{itemize}
+  \item \textbf{Solution 2:} Replace each digit with a unique symbol, e.g. \textcolor{Fuchsia}{$\texttt{5}$}
+\end{itemize}
   \begin{equation*}
-    \text{I pay 555.55 in May 5555} > \text{I pay 5555 in May 555.55}
+    \texttt{I pay \textcolor{Fuchsia}{555.55} in May \textcolor{Fuchsia}{5555} } \;>\; \texttt{I pay \textcolor{Fuchsia}{5555} in May \textcolor{Fuchsia}{555.55} }
   \end{equation*}
+\begin{itemize}
   \item This reduces the need for embeddings, when we can simply do transliteration
 \end{itemize}
 \end{frame}
 
 \begin{frame}
 \frametitle{Factored Decomposition}
-
+\begin{figure}
+  \centering
+  \includegraphics[width=10cm]{assets/factored_decomp}
+\end{figure}
+\begin{itemize}
+  \item \textbf{Problem:} Large input and output vectors
+  \begin{itemize}
+    \item $|x| = 20,000$, $|y|=50,000$ $\rightarrow$ $|M|=1,000,000,000$
+  \end{itemize}
+  \item \textbf{Solution:} Use a bottleneck with smaller matricies $A$, $B$
+  \begin{itemize}
+    \item $|v| = 100$ $\rightarrow$ $|A|= 2,000,000$, $|B|= 5,000,000$
+    \item Total Parameters: $7,000,000$
+  \end{itemize}
+\end{itemize}
 \end{frame}
-
 
 
 \begin{frame}
-\frametitle{Backoff}
-
+\frametitle{Character-Based Models}
+\begin{itemize}
+  \item Instead use embeddings for character string $\textcolor{ForestGreen}{\texttt{b e a u t i f u l}}$
+  \item Idea is to induce embeddings for unseen morphological variants: $\textcolor{ForestGreen}{\texttt{beautiful}}$
+  \item Tokens are single characters, symbols, whitespace
+  \pause
+  \item Generally poor performance
+\end{itemize}
 \end{frame}
-
 
 
 \begin{frame}
-\frametitle{Character Models}
-
+  \frametitle{Character-Based Models}
+  \begin{figure}
+    \centering
+    \includegraphics[height=6.5cm, valign=c]{assets/char_interpolate}
+  \end{figure}
 \end{frame}
 
+\begin{frame}
+  \frametitle{Character-Based Models}
+  \begin{figure}
+    \centering
+    \includegraphics[height=6.5cm, valign=c]{assets/char_conv}
+  \end{figure}
+\end{frame}
 
 
 \begin{frame}
 \frametitle{BPE Subwords}
+\footnotesize
+\begin{equation*}
+  \textcolor{ForestGreen}{\texttt{t h e $\cdotp$ f a t $\cdotp$ c a t $\cdotp$ i s $\cdotp$ i n $\cdotp$ t h e $\cdotp$ t h i n $\cdotp$ b a g}}
+\end{equation*}
+%\vspace{5mm}
+\begin{equation*}
+  \begin{array}{l l}
+    \textcolor{ForestGreen}{\texttt{t h $\rightarrow$ th}} & \textcolor{ForestGreen}{\texttt{th e $\cdotp$ f a t $\cdotp$ c a t $\cdotp$ i s $\cdotp$ i n $\cdotp$ th e $\cdotp$ th i n $\cdotp$ b a g}} \\
+    \textcolor{ForestGreen}{\texttt{a t $\rightarrow$ at}} & \textcolor{ForestGreen}{\texttt{th e $\cdotp$ f at $\cdotp$ c at $\cdotp$ i s $\cdotp$ i n $\cdotp$ th e $\cdotp$ th i n $\cdotp$ b a g}} \\
+    \textcolor{ForestGreen}{\texttt{i n $\rightarrow$ in}} & \textcolor{ForestGreen}{\texttt{th e $\cdotp$ f at $\cdotp$ c at $\cdotp$ i s $\cdotp$ in $\cdotp$ th e $\cdotp$ th in $\cdotp$ b a g}} \\
+    \textcolor{ForestGreen}{\texttt{th e $\rightarrow$ the}} & \textcolor{ForestGreen}{\texttt{the $\cdotp$ f at $\cdotp$ c at $\cdotp$ i s $\cdotp$ in $\cdotp$ the $\cdotp$ th in $\cdotp$ b a g}} \\
+  \end{array}
+\end{equation*}
+\normalsize
+\begin{itemize}
+  \item Breaks words into subwords
+  \begin{itemize}
+    \item Starts with the character set
+    \item Merges the most frequent pairs, one per iteration
+  \end{itemize}
+  \item Unsupervised (accidental) morphology (frequency suffixes)
+\end{itemize}
+\end{frame}
 
+
+\begin{frame}
+\frametitle{BPE Tokenization on A Tale of Two Cities by Charles Dickens}
+\begin{itemize}
+  \item Unique Characters: $78$
+  \item Unique BPE Tokens (1K iterations): $1,071$
+  \item Unique BPE Tokens (5K iterations): $4,864$
+  \item Unique Tokens: $10,153$
+\end{itemize}
+\footnotesize
+\begin{equation*}
+\textcolor{ForestGreen}{
+\begin{array}{l}
+  \texttt{it was the b\textcolor{Fuchsia}{@@} est of times ,} \\
+  \texttt{it was the wor\textcolor{Fuchsia}{@@} st of times ,} \\
+  \texttt{it was the age of w\textcolor{Fuchsia}{@@} is\textcolor{Fuchsia}{@@} do\textcolor{Fuchsia}{@@} m ,} \\
+  \texttt{it was the age of foo\textcolor{Fuchsia}{@@} li\textcolor{Fuchsia}{@@} sh\textcolor{Fuchsia}{@@} ness ,} \\
+  \texttt{it was the e\textcolor{Fuchsia}{@@} po\textcolor{Fuchsia}{@@} ch of beli\textcolor{Fuchsia}{@@} e\textcolor{Fuchsia}{@@} f ,} \\
+  \texttt{it was the e\textcolor{Fuchsia}{@@} po\textcolor{Fuchsia}{@@} ch of in\textcolor{Fuchsia}{@@} cre\textcolor{Fuchsia}{@@} du\textcolor{Fuchsia}{@@} l\textcolor{Fuchsia}{@@} ity ,} \\
+  \texttt{it was the s\textcolor{Fuchsia}{@@} ea\textcolor{Fuchsia}{@@} son of light ,} \\
+  \texttt{it was the s\textcolor{Fuchsia}{@@} ea\textcolor{Fuchsia}{@@} son of dar\textcolor{Fuchsia}{@@} k\textcolor{Fuchsia}{@@} ness ,} \\
+  \texttt{it was the sp\textcolor{Fuchsia}{@@} r\textcolor{Fuchsia}{@@} ing of hope ,} \\
+  \texttt{it was the win\textcolor{Fuchsia}{@@} ter of des\textcolor{Fuchsia}{@@} pa\textcolor{Fuchsia}{@@} ir} \\
+\end{array}}
+\end{equation*}
 \end{frame}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Modeling Recurrent Relations}
-
-\begin{frame}
-\frametitle{Recap: Recurrent Layers}
-
-\end{frame}
 
 \begin{frame}
 \frametitle{Vanilla RNNs}
@@ -273,7 +402,7 @@
   \item $h_t$ is the hidden state at time $t$
   \item $x_t$ is the input at time $t$
   \item $h_{t-1}$ is the previous hidden state
-  \item $h_0$ is initialized to $0$
+  \item $h_0$ is initialized to $\mathbf{0}$
 
 \end{itemize}
 \end{frame}
@@ -292,8 +421,8 @@
   \end{cases} \\
   \text{Outputs} \rightarrow & \begin{cases}
   \begin{array}{ll}
-              c_t = f_t * c_{t-1} + i_t * g_t \\
-              h_t = o_t * \tanh(c_t) \\
+              c_t = f_t \odot c_{t-1} + i_t \odot g_t \\
+              h_t = o_t \odot \tanh(c_t) \\
   \end{array}
 \end{cases}
 \end{split}
@@ -315,12 +444,12 @@
   \begin{array}{ll}
     r_t = \sigma(W_{ir} x_t + b_{ir} + W_{hr} h_{(t-1)} + b_{hr}) \\
     z_t = \sigma(W_{iz} x_t + b_{iz} + W_{hz} h_{(t-1)} + b_{hz}) \\
-    n_t = \tanh(W_{in} x_t + b_{in} + r_t * (W_{hn} h_{(t-1)}+ b_{hn})) \\
+    n_t = \tanh(W_{in} x_t + b_{in} + r_t \odot (W_{hn} h_{(t-1)}+ b_{hn})) \\
   \end{array}
   \end{cases} \\
   \text{Outputs} \rightarrow & \begin{cases}
   \begin{array}{ll}
-            h_t = (1 - z_t) * n_t + z_t * h_{(t-1)}
+            h_t = (1 - z_t) \odot n_t + z_t \odot h_{(t-1)}
   \end{array}
 \end{cases}
 \end{split}
@@ -328,15 +457,60 @@
 \begin{itemize}
   \item $h_t$ is the hidden state at time $t$
   \item $x_t$ is the input at time $t$
-  \item $h_{t-1}$ is the previous hidden state
-  \item $h_0$ is initialized to $0$
 \end{itemize}
 
 \end{frame}
 
 \begin{frame}
-\frametitle{Aside: Different Perspective on Deep Recurrent Models}
-% insert koehn deep model nn-lm slide 37
+\frametitle{Aside: Different Perspectives on Deep Recurrent Models}
+  % insert koehn deep model nn-lm slide 37
+  \begin{itemize}
+    \item So far we've only seen Left to Right Sequencing
+  \end{itemize}
+  \begin{figure}
+    \centering
+    \includegraphics[width=10cm]{assets/L2R}
+  \end{figure}
+  \pause
+  \begin{itemize}
+    \item Why not Right to Left?
+  \end{itemize}
+  \begin{figure}
+    \centering
+    \includegraphics[width=10cm]{assets/R2L}
+  \end{figure}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Aside: Different Perspectives on Deep Recurrent Models}
+\begin{figure}
+  \centering
+  \includegraphics[width=10cm]{assets/deep_models}
+\end{figure}
+\begin{itemize}
+  \item Experiment with different stacking techniques
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Alternating Recurrent Directions}
+\begin{figure}
+  \centering
+  \includegraphics[width=9cm]{assets/alternate_stacked}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Bidirectional Sequence Modeling}
+\begin{figure}
+  \centering
+  \includegraphics[width=10cm]{assets/bidirectional}
+\end{figure}
+\begin{itemize}
+  \item Can capture both left and right context
+  \item Implementation usually concatenates RNN states
+\end{itemize}
 \end{frame}
 
 
@@ -373,129 +547,15 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
 
 \begin{frame}
 \frametitle{Aside: The Influence of Padding in RNNs}
-
-\end{frame}
-
-\begin{frame}
-\frametitle{Right to Left Sequence Modeling}
 \begin{itemize}
-  \item So far, we've only seen Left to Right Sequencing
-  \item Why not Right to Left?
+  \item Assume the embedding $E\left[ \textcolor{WildStrawberry}{\langle \texttt{PAD} \rangle} \right] = \mathbf{0}$
+  \item Are we safe? \pause \textbf{NO!}
+  \item Because of the bias term, zero input does not result in a zero output
+  \item This alters the hidden state being passed onto the next iteration
+  \item \textbf{Question:} Does this mean we learn the amount of padding for a given sequence?
 \end{itemize}
 \end{frame}
 
-\begin{frame}
-\frametitle{Bidirectional Sequence Modeling}
-\begin{itemize}
-  \item Why not both directions?
-  \item We concatenate the results of each direction together
-\end{itemize}
-\end{frame}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-\section{Putting together an Encoder}
-
-\begin{frame}
-\frametitle{The Components of an Encoder}
-\begin{figure}[ht!]
-  \centering
-  \begin{tikzpicture}
-
-    % Define nodes
-    \node[rectangle] (rnn) {RNN/GRU};
-    \node[rectangle, below=0.75cm of rnn, xshift=-1cm] (out) {$output$};
-    \node[rectangle, below=0.75cm of rnn, xshift=1cm] (hidden2) {$hidden$};
-    \node[rectangle, above=0.75cm of rnn, xshift=-1cm] (embed) {Embed};
-    \node[rectangle, above=0.75cm of embed] (input) {$source$};
-    \node[rectangle, right=0.75cm of input] (hidden1) {$hidden$};
-
-    % Connect the nodes
-    \edge {input} {embed};
-    \edge {embed, hidden1} {rnn};
-    \edge {rnn} {out, hidden2};
-
-  \end{tikzpicture}
-  \caption{Model Architecture for Encoder.}
-  \label{fig:encoder}
-\end{figure}
-\end{frame}
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Putting together an Decoder}
-
-\begin{frame}
-\frametitle{The Components of a Decoder}
-\begin{figure}[ht!]
-  \centering
-  \begin{tikzpicture}
-
-    % Define nodes
-    \node[rectangle] (rnn) {RNN/GRU};
-    \node[rectangle, above=0.75cm of rnn] (embed) {Embed};
-    \node[rectangle, above=0.75 of embed] (input) {$input$};
-    \node[rectangle, right=1cm of input] (hidden1) {$hidden$};
-    \node[rectangle, below=0.75cm of rnn] (linear) {Linear};
-    \node[rectangle, below=0.75cm of linear] (logs) {Log Softmax};
-    \node[rectangle, below=0.75cm of logs] (out) {$output$};
-    \node[rectangle, right=1.25cm of out] (hidden2) {$hidden$};
-
-    % Connect the nodes
-    \edge {input} {embed};
-    \edge {embed, hidden1} {rnn};
-    \edge {rnn} {linear, hidden2};
-    \edge {linear} {logs};
-    \edge {logs} {out};
-
-  \end{tikzpicture}
-  \caption{Decoder with No Attention.}
-  \label{fig:decoder-no-attn}
-\end{figure}
-\end{frame}
-
-\begin{frame}
-\frametitle{Connecting the Encoder}
-\begin{figure}[ht!]
-  \centering
-  \begin{tikzpicture}
-
-    % Define nodes
-    \node[rectangle] (encoder) {Encoder};
-    \node[rectangle, below=2cm of encoder] (decoder) {Decoder};
-    \node[rectangle, above=0.75cm of encoder, xshift=-1cm] (s) {$source$};
-    \node[rectangle, above=0.75cm of encoder, xshift=1cm] (hidden1) {$None$};
-    \node[rectangle, below=0.75cm of encoder, xshift=-1cm] (out1) {$encodings$};
-    \node[rectangle, below=0.75cm of encoder, xshift=1cm] (hidden2) {$hidden$};
-    \node[rectangle, left=0.75cm of decoder] (t) {$token$};
-    \node[rectangle, below=0.75cm of decoder, xshift=-1cm] (out2) {$new$ $token$};
-    % \node[rectangle, below=0.75cm of decoder, xshift=1cm] (hidden3) {$hidden$};
-
-    % Connect the nodes
-    \edge {s, hidden1} {encoder};
-    \edge {encoder} {out1, hidden2};
-    \edge {out1, t} {decoder};
-    \edge {decoder} {out2};
-    \edge {out2} {t};
-    \path [->] (decoder) edge [bend right=15] node {} (hidden2);
-    \path [->] (hidden2) edge [bend right=15] node {} (decoder);
-
-  \end{tikzpicture}
-  \caption{Model Architecture Overview for Encoder-Decoder.}
-  \label{fig:encoder-decoder}
-\end{figure}
-\end{frame}
-
-\begin{frame}
-\frametitle{Decoder Inference: Making Predictions}
-
-\end{frame}
-
-\begin{frame}
-\frametitle{Teacher Forcing}
-
-\end{frame}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -518,11 +578,29 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
 \end{itemize}
 \end{frame}
 
+\begin{frame}
+\frametitle{Teacher Forcing}
+\begin{itemize}
+  \item Instead of refeeding the predicted token, replace it with the true token randomly
+  \item This is only done during training, not inference
+\end{itemize}
+\begin{equation*}
+  y_{i+1} = \begin{cases}
+    \argmax_{j} \theta_i  & \mathcal{U}(0, 1) < \text{TF} \\
+    t_{i+1} & else
+  \end{cases}
+\end{equation*}
+\begin{itemize}
+  \item $t_{i+1}$ is the true token
+  \item $\text{TF}$ is the teacher forcing ratio
+\end{itemize}
+\end{frame}
+
 
 \begin{frame}
 \frametitle{Cross Entropy and Label Smoothing}
 \begin{equation*}
-  \text{loss}(\mathbf{x}_i, y_i) = -\underbrace{x_{y_i}}_{maximize} + \overbrace{\log \sum_j \exp x_j}^{minimize}
+  \ell\left(\mathbf{x}_i, y_i\right) = -\underbrace{x_{y_i}}_{max} + \overbrace{\log \sum_j \exp x_j}^{min}
 \end{equation*}
 \begin{itemize}
   \item Softmax and Cross-Entropy loss assign all the probability mass to a single word
@@ -545,18 +623,108 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
   \begin{equation*}
     p(y_i) = \frac{\exp \left(x_{y_i} / T \right)}{\sum_j \exp \left(x_j / T \right)}
   \end{equation*}
-  \item As $T \to \infty$, the distribution is smoother
+  \item As $T \to \infty$, the distribution is smoother, uniform
+  \item AS $T \to 0$, the distribution approaches a kronecker delta centered on the class with the most mass
 \end{itemize}
 \end{frame}
 
 \begin{frame}
 \frametitle{Visualizing Temperature}
+\begin{figure}
+  \centering
+  \includegraphics[width=10cm]{assets/temperature}
+\end{figure}
+\end{frame}
 
+% \begin{frame}
+%   \frametitle{Probability Refresher: Relationships between Discrete Distributions}
+%   \begin{center}
+%     \begin{tabular}{lcc}
+%       \toprule
+%       Distribution &  Categories &  Trials \\
+%       \midrule
+%       Bernoulli & 1 & 1 \\
+%       Binomial & 1 & $n$ \\
+%       Categorical & $k$ & 1 \\
+%       Multinomial & $k$ & $n$ \\
+%       \bottomrule
+%     \end{tabular}
+%   \end{center}
+% \end{frame}
+
+\begin{frame}
+  \frametitle{Monte Carlo Decoding}
+  \begin{itemize}
+    \item Recall how we select the next token:
+    \begin{itemize}
+      \item \textbf{Greedy:} Top token weight
+      \item \textbf{Teacher Forcing:} Randomly select the true token
+    \end{itemize}
+    \item Note that the outputs are a distribution over the target vocabulary
+    \item \textbf{Use these weights in a multinomial to randomly select a continuation}
+  \end{itemize}
+  \begin{equation*}
+      y_i \sim \text{Multinomial}\left( \theta_i \right)
+  \end{equation*}
+\end{frame}
+
+
+
+\begin{frame}
+  \frametitle{Different Token Decoding Schemes}
+  \begin{itemize}
+    \item \textbf{Greedy:}
+  \end{itemize}
+  \begin{equation*}
+    y_{i+1} = \argmax_j \theta_i
+  \end{equation*}
+  \begin{itemize}
+    \item \textbf{Teacher Forcing:}
+  \end{itemize}
+  \begin{equation*}
+    y_{i+1} = \begin{cases}
+      \argmax_{j} \theta_i  & \mathcal{U}(0, 1) < \text{TF} \\
+      t_{i+1} & else
+    \end{cases}
+  \end{equation*}
+  \begin{itemize}
+    \item \textbf{Monte Carlo:}
+  \end{itemize}
+  \begin{equation*}
+    y_{i+1} \sim \text{Multinomial}\left( \theta_i \right)
+  \end{equation*}
+  \begin{itemize}
+    \item $\theta_i$ are the output weights from the Decoder
+    \item $t_{i+1}$ is the true token at position $i + 1$
+    \item $\text{TF}$ is the teacher forcing ratio
+  \end{itemize}
 \end{frame}
 
 \begin{frame}
 \frametitle{Masked Loss}
-
+\begin{itemize}
+  \item Remember, we don't care what gets predicted after seeing a $\textcolor{BrickRed}{\langle \texttt{EOS} \rangle}$
+  \item Hence, we need to mask out the loss for predicted tokens associated with $\textcolor{WildStrawberry}{\langle \texttt{PAD} \rangle}$
+\end{itemize}
+\begin{equation*}
+  \begin{array} {rccccccc}
+    \texttt{pred} & \rightarrow & \textcolor{ForestGreen}{le} & \textcolor{ForestGreen}{le} & \textcolor{ForestGreen}{chat} & \textcolor{ForestGreen}{chat} & \textcolor{ForestGreen}{chat} & \textcolor{ForestGreen}{chat} \\
+    {} & {} & \downarrow & \downarrow & \downarrow & \downarrow & \downarrow & \downarrow \\
+    {} & {} & \ell & \ell & \ell & \ell & \ell & 0 \\
+    {} & {} & \uparrow & \uparrow & \uparrow & \uparrow & \uparrow & \uparrow \\
+    \texttt{true} & \rightarrow & \textcolor{ForestGreen}{le} & \textcolor{ForestGreen}{chat} & \textcolor{ForestGreen}{est} & \textcolor{ForestGreen}{noir} & \textcolor{BrickRed}{\langle \texttt{EOS} \rangle} & \textcolor{WildStrawberry}{\langle \texttt{PAD} \rangle} \\
+  \end{array}
+\end{equation*}
+\begin{itemize}
+  \item \textbf{Solution:} Zero out elements by either:
+  \begin{itemize}
+    \item Multiply pad outputs by $0$
+    \item Specify the label to ignore in Cross Entropy call
+  \end{itemize}
+\end{itemize}
+\begin{equation*}
+  \ell(\mathbf{x}_i, y_i) = \mathds{1}_{\left\{y_i \not= \textcolor{WildStrawberry}{\langle \texttt{PAD} \rangle} \right\} } \cdot \left( -x_{y_i} + \log \sum_j \exp x_j \right)
+\end{equation*}
 \end{frame}
 
 
@@ -565,35 +733,159 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
 
 \begin{frame}
 \frametitle{Beam Search}
+\begin{figure}
+  \centering
+  \includegraphics[height=5cm, valign=c]{assets/beam1}
+\end{figure}
+\end{frame}
 
+\begin{frame}
+\frametitle{Beam Search}
+\begin{figure}
+  \centering
+  \includegraphics[height=5cm, valign=c]{assets/beam2}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Beam Search}
+\begin{figure}
+  \centering
+  \includegraphics[height=5cm, valign=c]{assets/beam3}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Beam Search}
+\begin{figure}
+  \centering
+  \includegraphics[height=5cm, valign=c]{assets/beam4}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Beam Search}
+\begin{figure}
+  \centering
+  \includegraphics[height=5cm, valign=c]{assets/beam5}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Beam Search}
+\begin{figure}
+  \centering
+  \includegraphics[height=5cm, valign=c]{assets/beam6}
+\end{figure}
 \end{frame}
 
 \begin{frame}
 \frametitle{Monte Carlo Beam Search}
-
+  \begin{figure}
+    \centering
+    $y_i \; \sim \; \text{Multinomial} \left( \includegraphics[height=4.5cm, valign=c]{assets/monte_carlo} \right)$
+    % \includegraphics[height=4.5cm, valign=c]{assets/monte_carlo}
+  \end{figure}
+  \begin{itemize}
+    \item Why not sample $n$ words based on their probabilities?
+    \item Adds more diversity to beam search results
+  \end{itemize}
 \end{frame}
 
 \begin{frame}
 \frametitle{Ensembling}
+\begin{figure}
+  \centering
+  \includegraphics[width=7cm, valign=c]{assets/ensemble}
+\end{figure}
+\begin{itemize}
+  \item Why not average different models?
+  \item Random initialization leads to different local solutions
+  \item Could also use model dumps from different iterations
+\end{itemize}
+\end{frame}
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Applications}
+
+\begin{frame}
+\frametitle{Recall: Encoders, Decoders, and Seq2Seq Models}
+\begin{itemize}
+  \item \textbf{Encoders} given a sequence meaning
+  \item \textbf{Decoders} generate a new sequence
+  \item \textbf{Seq2Seq} generate sequences conditioned on another sequence
+\end{itemize}
 \end{frame}
 
 \begin{frame}
-\frametitle{Reranking}
-
+  \frametitle{What to use for which application?}
+  \begin{itemize}
+    \item \textbf{Encoders}
+    \begin{itemize}
+      \item POS Tagging
+      \item Sentence Embeddings
+      \item Anything where you are given the sentence at test time
+    \end{itemize}
+    \item \textbf{Decoders}
+    \begin{itemize}
+      \item Text Generation
+      \item Language Modeling
+      \item Anything where you need to create a sequence at test time
+    \end{itemize}
+    \item \textbf{Seq2Seq}
+      \begin{itemize}
+        \item Translation
+        \item Speech Recognition
+        \item Summarization
+        \item Question/Answering
+        \item Anything where you convert a sequence into another sequence
+      \end{itemize}
+  \end{itemize}
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Tools, References, and Further Reading}
 
-
 \begin{frame}
-\frametitle{Refrences \& Further Reading}
+  \frametitle{Papers}
   \begin{itemize}
-    \item \href{https://www.cs.ubc.ca/~murphyk/MLbook/}{Machine Learning: A Probabilistic Perspective by Kevin Murphy}
+    \item \href{https://arxiv.org/abs/1409.3215}{Sutskever et al., Sequence to Sequence Learning with Neural Networks}
+    \item \href{https://arxiv.org/abs/1406.1078}{Cho et al., Learning Phrase Representations using RNN Encoder-Decoder for Statistical Machine Translation}
+    \item \href{https://arxiv.org/pdf/1508.07909}{Sennrich et al., Neural Machine Translation of Rare Words with Subword Units}
+    \item \href{https://arxiv.org/abs/1709.07809}{Koehn, Neural Machine Translation}
+    \item \href{https://www.aclweb.org/anthology/W17-3204.pdf}{Koehn, Six Challenges for Neural Machine Translation}
   \end{itemize}
 \end{frame}
+
+\begin{frame}
+  \frametitle{Tutorials}
+  \begin{itemize}
+    \item Pytorch
+    \begin{itemize}
+      \item \href{https://pytorch.org/tutorials/intermediate/seq2seq_translation_tutorial.html}{Official PyTorch Seq2Seq Tutorial}
+      \item \href{https://pytorch.org/tutorials/beginner/torchtext_translation_tutorial.html}{PyTorch Seq2Seq with Torchtext}
+      \item \href{https://github.com/bentrevett/pytorch-seq2seq}{Ben Trevett Seq2Seq Tutorial}
+    \end{itemize}
+    \item Tensorflow
+    \begin{itemize}
+      \item \href{https://www.tensorflow.org/tutorials/text/nmt_with_attention}{NMT with Attention}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Libraries}
+  \begin{itemize}
+    \item \href{https://github.com/pytorch/fairseq}{Facebook: fairseq (PyTorch)}
+    \item \href{https://github.com/OpenNMT/OpenNMT-py}{Open NMT (PyTorch)}
+    \item \href{https://github.com/OpenNMT/OpenNMT-tf}{Open NMT (Tensorflow)}
+  \end{itemize}
+\end{frame}
+
+\section{Thank You!}
 
 
 % Refs, ideas, etc
