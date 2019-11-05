@@ -144,7 +144,7 @@
 \begin{itemize}
   \item Recall: \textbf{Decoders} provide a new sequence conditioned on the Encoder's hidden state
   \item Starts with the Encoder's hidden state, and predicts one token at a time
-  \item Refeed the predicted token back into the decoder
+  \item Re-feed the predicted token back into the decoder
 \end{itemize}
 \end{frame}
 
@@ -178,7 +178,7 @@
 \frametitle{Recap: Pretrained Word Embeddings}
 \begin{itemize}
   \item Co-occurence Matrix
-  \item Pointwise Mutal Information
+  \item Pointwise Mutual Information
   \item SVD Co-occurence
   \item Ngram
   \item CBOW, Skip Gram
@@ -220,11 +220,11 @@
 \begin{columns}
   \begin{column}{0.45\textwidth}
     \begin{itemize}
-      \item Languages are unevely distributed
+      \item Languages are unevenly distributed
       \item Many rare words, names $\rightarrow$ inflates the size of the vocabulary
       \item \textbf{Problem:}
       \begin{itemize}
-        \item Large embedding matricies for source, target language
+        \item Large embedding matrices for source, target language
         \item Large output layers for prediction and softmax
       \end{itemize}
       \item Naive Solution: Limit the vocab size to most frequent
@@ -247,7 +247,7 @@
   \begin{equation*}
     \textcolor{Fuchsia}{tweet, tweets, tweeted, tweeting, retweet, \hdots}
   \end{equation*}
-  \item Compund Splitting
+  \item Compound Splitting
   \begin{itemize}
     \item \textcolor{Fuchsia}{homework} $\rightarrow$ \textcolor{Fuchsia}{home$\cdotp$work}
     \item \textcolor{Fuchsia}{website} $\rightarrow$ \textcolor{Fuchsia}{web$\cdotp$site}
@@ -298,7 +298,7 @@
   \begin{itemize}
     \item $|x| = 20,000$, $|y|=50,000$ $\rightarrow$ $|M|=1,000,000,000$
   \end{itemize}
-  \item \textbf{Solution:} Use a bottleneck with smaller matricies $A$, $B$
+  \item \textbf{Solution:} Use a bottleneck with smaller matrices $A$, $B$
   \begin{itemize}
     \item $|v| = 100$ $\rightarrow$ $|A|= 2,000,000$, $|B|= 5,000,000$
     \item Total Parameters: $7,000,000$
@@ -605,7 +605,7 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
 \begin{itemize}
   \item Softmax and Cross-Entropy loss assign all the probability mass to a single word
   \begin{itemize}
-    \item LogSumExp is minimized on confidient predictions
+    \item LogSumExp is minimized on confident predictions
   \end{itemize}
   \item Solution: smooth the distribution
 \end{itemize}
