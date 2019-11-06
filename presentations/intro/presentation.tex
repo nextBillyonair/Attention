@@ -233,7 +233,9 @@
   \begin{column}{0.45\textwidth}
     \begin{figure}
       \centering
-      \includegraphics[height=4.5cm, valign=c]{assets/zipf}
+      \includegraphics[width=4.5cm, valign=c]{assets/zipf}
+      \vspace{5mm}
+      \includegraphics[width=4.5cm, valign=c]{assets/zipf_log}
     \end{figure}
   \end{column}
 \end{columns}
@@ -266,7 +268,7 @@
   \item Do we really need to encode every number? \textbf{NO!}
 \end{itemize}
   \begin{equation*}
-    \texttt{I pay 950.00 in May 2007} \;>\; \texttt{I pay 2007 in May 950.00}
+    \texttt{I pay $\textcolor{Fuchsia}{950.00}$ in May $\textcolor{Fuchsia}{2007}$} \;>\; \texttt{I pay $\textcolor{Fuchsia}{2007}$ in May $\textcolor{Fuchsia}{950.00}$}
   \end{equation*}
   \pause
 \begin{itemize}
@@ -600,7 +602,10 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
 \begin{frame}
 \frametitle{Cross Entropy and Label Smoothing}
 \begin{equation*}
-  \ell\left(\mathbf{x}_i, y_i\right) = -\underbrace{x_{y_i}}_{max} + \overbrace{\log \sum_j \exp x_j}^{min}
+  \begin{split}
+    \ell\left(\mathbf{x}, y_i\right) =& - \log \left( \frac{\exp x_{y_i} }{\sum_j \exp x_j} \right) \\
+    =& -\underbrace{x_{y_i}}_{max} + \underbrace{\log \sum_j \exp x_j}_{min}
+  \end{split}
 \end{equation*}
 \begin{itemize}
   \item Softmax and Cross-Entropy loss assign all the probability mass to a single word
@@ -625,6 +630,7 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
   \end{equation*}
   \item As $T \to \infty$, the distribution is smoother, uniform
   \item AS $T \to 0$, the distribution approaches a kronecker delta centered on the class with the most mass
+  \item \textbf{Question:} Why do we divide instead of adding/subtracting?
 \end{itemize}
 \end{frame}
 
@@ -664,7 +670,7 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
     \item \textbf{Use these weights in a multinomial to randomly select a continuation}
   \end{itemize}
   \begin{equation*}
-      y_i \sim \text{Multinomial}\left( \theta_i \right)
+      y_{i+1} \sim \text{Multinomial}\left( \theta_i \right)
   \end{equation*}
 \end{frame}
 
@@ -723,7 +729,7 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
   \end{itemize}
 \end{itemize}
 \begin{equation*}
-  \ell(\mathbf{x}_i, y_i) = \mathds{1}_{\left\{y_i \not= \textcolor{WildStrawberry}{\langle \texttt{PAD} \rangle} \right\} } \cdot \left( -x_{y_i} + \log \sum_j \exp x_j \right)
+  \ell(\mathbf{x}, y_i) = \mathds{1}_{\left\{y_i \not= \textcolor{WildStrawberry}{\langle \texttt{PAD} \rangle} \right\} } \cdot \left( -x_{y_i} + \log \sum_j \exp x_j \right)
 \end{equation*}
 \end{frame}
 
@@ -783,7 +789,7 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
 \frametitle{Monte Carlo Beam Search}
   \begin{figure}
     \centering
-    $y_i \; \sim \; \text{Multinomial} \left( \includegraphics[height=4.5cm, valign=c]{assets/monte_carlo} \right)$
+    $y_{i+1} \; \sim \; \text{Multinomial} \left( \includegraphics[height=4.5cm, valign=c]{assets/monte_carlo} \right)$
     % \includegraphics[height=4.5cm, valign=c]{assets/monte_carlo}
   \end{figure}
   \begin{itemize}
