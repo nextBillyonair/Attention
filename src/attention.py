@@ -1,6 +1,7 @@
 import torch
 from torch.nn import Module, Linear, Bilinear
 from torch.nn import MultiheadAttention as TorchMultiheadAttention
+import math
 
 '''
 Notes:
@@ -85,9 +86,10 @@ class GeneralAttention(Module):
 
 class DotAttention(Module):
 
-    def __init__(self, embedding_size, hidden_size):
+    def __init__(self, embedding_size, hidden_size, use_scale=False):
         super().__init__()
         self.embedding_size = embedding_size
+        self.scale = 1 / math.sqrt(embedding_size) if use_scale else 1.
 
     def forward(self, encodings, context=None, mask=None, return_weights=True):
         batch_size, seq_len, _ = encodings.size()
@@ -103,7 +105,7 @@ class DotAttention(Module):
         # Reshapes to make matmul work with 4D
         encodings = encodings.view(batch_size, seq_len, 1, -1)
         context = encodings.view(batch_size, seq_len, -1, 1)
-        scores = torch.matmul(encodings, context).squeeze(-1)
+        scores = self.scale * torch.matmul(encodings, context).squeeze(-1)
         # scores.shape == (batch_size, seq_len, 1)
 
         if mask is not None:

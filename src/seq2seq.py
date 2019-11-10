@@ -8,14 +8,15 @@ from .attention import ConcatAttention
 
 class Encoder(Module):
 
-    def __init__(self, enc_units, embedding_dim, vocab_size=10000, num_layers=1):
+    def __init__(self, enc_units, embedding_dim, vocab_size=10000, num_layers=1, bidirectional=False):
         super().__init__()
         self.enc_units = enc_units
+        self.output_size = 2 * enc_units if bidirectional else enc_units
         self.embedding_dim = embedding_dim
         self.num_layers = num_layers
         self.vocab_size = vocab_size
         self.embedding = Embedding(vocab_size, embedding_dim)
-        self.gru = GRU(embedding_dim, enc_units, num_layers=num_layers, batch_first=True)
+        self.gru = GRU(embedding_dim, enc_units, num_layers=num_layers, batch_first=True, bidirectional=bidirectional)
 
     def forward(self, x, hidden=None):
         # Input.shape == (batch_size, seq_len) LONG
@@ -149,5 +150,6 @@ class Seq2Seq(Module):
         # decoder_outputs.shape == (batch_size, target_seq_len, target_vocab_size)
         # attention_weights.shape == (batch_size, target_seq_len, source_seq_len)
         decoder_outputs = torch.cat(decoder_outputs, dim=-2)
-        attention_weights = torch.cat(attention_weights, dim=-1).transpose(1, 2)
+        if len(attention_weights) != 0:
+            attention_weights = torch.cat(attention_weights, dim=-1).transpose(1, 2)
         return decoder_outputs, attention_weights

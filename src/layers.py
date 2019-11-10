@@ -6,7 +6,9 @@ from torch.nn import (
 )
 from torch.nn.functional import relu
 import math
+import random
 from .embeddings import PositionalEmbeddings
+from .utils import create_masks
 
 
 class BatchFirstTransformer(Module):
@@ -52,6 +54,7 @@ def scaled_dot_product_attention(query, key, value, mask=None):
     if mask is not None:
         mask = mask.unsqueeze(1).unsqueeze(1)
         scaled_attention_logits += (mask * -1e10)
+
 
     attention_weights = torch.softmax(scaled_attention_logits, dim=-1)
 
@@ -257,7 +260,8 @@ class Transformer(Module):
     def __init__(self, num_layers, d_model, num_heads, dff,
                  mha_hidden=None,
                  input_vocab_size=10000, target_vocab_size=10000,
-                 pe_input=5000, pe_target=5000, rate=0.1):
+                 pe_input=5000, pe_target=5000, rate=0.1, teacher_forcing=1.0,
+                 SOS_token=1, max_length=40):
         super().__init__()
         self.encoder = Encoder(num_layers, d_model, num_heads, dff, mha_hidden,
                                input_vocab_size, pe_input, rate)
@@ -266,15 +270,52 @@ class Transformer(Module):
 
         self.final_layer = Linear(d_model, target_vocab_size)
         self.type = 'transformer'
+        self.SOS_token = SOS_token
+        self.teacher_forcing = teacher_forcing
+        self.max_length = max_length
 
     def forward(self, input, target, enc_padding_mask=None,
                 look_ahead_mask=None, dec_padding_mask=None):
-        # enc_output.shape == (batch_size, inp_seq_len, d_model)
-        enc_output = self.encoder(input, enc_padding_mask)
-        # dec_output.shape == (batch_size, tar_seq_len, d_model)
-        dec_output, attention_weights = self.decoder(target, enc_output, look_ahead_mask, dec_padding_mask)
-        # final_output.shape == (batch_size, tar_seq_len, target_vocab_size)
-        final_output = self.final_layer(dec_output)
+
+        target_length = target.size(1) if target is not None else self.max_length
+
+        if target is not None and self.teacher_forcing == 1.:
+            enc_padding_mask, combined_mask, dec_padding_mask = create_masks(input, target)
+
+            # enc_output.shape == (batch_size, inp_seq_len, d_model)
+            enc_output = self.encoder(input, enc_padding_mask)
+            # dec_output.shape == (batch_size, tar_seq_len, d_model)
+            dec_output, attention_weights = self.decoder(target, enc_output, look_ahead_mask, dec_padding_mask)
+            # final_output.shape == (batch_size, tar_seq_len, target_vocab_size)
+            final_output = self.final_layer(dec_output)
+        else:
+            batch_size = input.size(0)
+
+            enc_output = self.encoder(input, enc_padding_mask)
+
+            decoder_input = torch.full((batch_size, 1), self.SOS_token).long() # Assumes SOS Tok == 1
+            # decoder_input.shape == (batch_size, 1) LONG
+            decoder_outputs, attention_weights = [], []
+
+            for i in range(1, target_length):
+                enc_padding_mask, combined_mask, dec_padding_mask = create_masks(input, decoder_input)
+
+                decoder_output, attention_weights = self.decoder(decoder_input, enc_output, combined_mask, dec_padding_mask)
+                decoder_output = self.final_layer(decoder_output)
+
+                decoder_outputs.append(decoder_output[:, -1, :].unsqueeze(1))
+                # print(attention_weight)
+                # attention_weights.append(attention_weight[:, :, -1].unsqueeze(2))
+                pred_token = decoder_output.argmax(dim=-1)[:, -1].unsqueeze(1).detach()
+                # print(pred_token)
+                if target is not None and random.random() < self.teacher_forcing:
+                    pred_token = tgt[:, i:i+1]
+                decoder_input = torch.cat((decoder_input, pred_token), dim=-1)
+                # decoder_input = (batch_size, i + 1)
+
+            final_output = torch.cat(decoder_outputs, dim=-2)
+            # attention_weights = torch.cat(attention_weights, dim=-1).transpose(1, 2)
+
 
         return final_output, attention_weights
 

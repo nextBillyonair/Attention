@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from tqdm import tqdm
 import sys
+from collections import defaultdict
 
 
 def gelu(x):
@@ -43,32 +44,47 @@ def create_masks(input, target, pad_tok = 0.):
 class Vocab:
 
     def __init__(self, max_vocab_size=10000):
-        self.vocab = tf.keras.preprocessing.text.Tokenizer(num_words=max_vocab_size, filters='', oov_token='<unk>')
+        # self.vocab = tf.keras.preprocessing.text.Tokenizer(num_words=max_vocab_size, filters='', oov_token='<unk>')
+        self.vocab = defaultdict(lambda:1, {'<pad>':0, '<unk>':1, '<sos>':2, '<eos>':3})
+        self.index_word = defaultdict(lambda:'<unk>', {0:'<pad>', 1:'<unk>', 2:'<sos>', 3:'<eos>'})
         self.PAD_token = 0
+        self.UNK_token = 1
+        self.SOS_token = 2
+        self.EOS_token = 3
+        self.num_tokens = 4
         self.max_vocab_size = max_vocab_size
 
     def build_vocab(self, data):
-        self.vocab.fit_on_texts(data)
-        self.SOS_token = self.vocab.word_index['<sos>']
-        self.EOS_token = self.vocab.word_index['<eos>']
-        self.UNK_token = self.vocab.word_index['<unk>']
-        self.num_words = min(self.vocab.num_words, len(self.vocab.word_index) + 1)
+        if self.num_tokens == self.max_vocab_size:
+            print('max token length acheived')
+            return
 
-    def to_sequence(self, data):
-        tensor = self.vocab.texts_to_sequences(data)
-        tensor = tf.keras.preprocessing.sequence.pad_sequences(tensor, padding='post')
-        return torch.tensor(tensor).long()
+        for sentence in data:
+            for word in sentence.split():
+                if word not in self.vocab:
+                    self.vocab[word] = self.num_tokens
+                    self.index_word[self.num_tokens] = word
+                    self.num_tokens += 1
+                if self.num_tokens == self.max_vocab_size:
+                    print('limit reached')
+                    return
 
-    def is_special_token(self, token):
-        return token.item() in [self.PAD_token, self.EOS_token, self.SOS_token]
+    def to_sequence(self, data, pad=True):
+        tensor = [torch.tensor([self.vocab[word] for word in sentence.split()]).long() for sentence in data]
+        if pad:
+            return torch.nn.utils.rnn.pad_sequence(tensor, batch_first=True, padding_value=self.PAD_token)
+        return tensor
+
+    def is_special(self, tok, ignore=False):
+        if ignore:
+            return tok in [self.SOS_token, self.EOS_token, self.PAD_token]
+        return False
 
     def to_string(self, tensor, remove_special=False):
-        if remove_special:
-            return [ " ".join([self.vocab.index_word[idx.item()] for idx in t if not self.is_special_token(idx)]) for t in tensor]
-        return [ " ".join([self.vocab.index_word[idx.item()] for idx in t if idx.item() != self.PAD_token]) for t in tensor]
+        return [ " ".join([self.index_word[idx.item()] for idx in t if not self.is_special(idx.item(), remove_special)]) for t in tensor]
 
     def __len__(self):
-        return self.num_words
+        return self.num_tokens
 
 
 def unicode_to_ascii(s):
@@ -98,21 +114,75 @@ def preprocess_sentence(w):
     w = '<sos> ' + w + ' <eos>'
     return w
 
-def make_dataset(train_text, test_text, train_batch_size=32, test_batch_size=64, max_vocab_size=10000):
+def make_minibatch(src, tgt):
+    join = [(s, t) for s, t in zip(src, tgt)]
+    join.sort(key=lambda x: (len(x[0]), len(x[1])))
+    tensors = []
+    current_shape = (join[0][0].size(0), join[0][1].size(0))
+    current_tensor = (join[0][0].unsqueeze(0), join[0][1].unsqueeze(0))
+    for next_tensor in join[1:]:
+        shape = (next_tensor[0].size(0), next_tensor[1].size(0))
+        if shape == current_shape:
+            current_tensor = (torch.cat((current_tensor[0], next_tensor[0].unsqueeze(0)), dim=0), \
+                              torch.cat((current_tensor[1], next_tensor[1].unsqueeze(0)), dim=0)
+                              # torch.cat((current_tensor[2], next_tensor[2].unsqueeze(0)), dim=0)
+                            )
+        else:
+            tensors.append(current_tensor)
+            current_shape = (next_tensor[0].size(0), next_tensor[1].size(0))
+            current_tensor = (next_tensor[0].unsqueeze(0), next_tensor[1].unsqueeze(0))
+    tensors.append(current_tensor)
+    return tensors
+
+
+
+def make_dataset(train_text, test_text, train_batch_size=32, test_batch_size=64, max_vocab_size=10000, pad=False):
+
     src_train = [preprocess_sentence(t) for t in train_text[0]]
     src_test = [preprocess_sentence(t) for t in test_text[0]]
     tgt_train = [preprocess_sentence(t) for t in train_text[1]]
     tgt_test = [preprocess_sentence(t) for t in test_text[1]]
+
     # src_train, src_test, tgt_train, tgt_test = train_test_split(source_text, target_text, test_size=test_size)
     src_vocab, tgt_vocab = Vocab(max_vocab_size), Vocab(max_vocab_size)
     src_vocab.build_vocab(src_train); tgt_vocab.build_vocab(tgt_train)
-    src_train, src_test = src_vocab.to_sequence(src_train), src_vocab.to_sequence(src_test)
-    tgt_train, tgt_test = tgt_vocab.to_sequence(tgt_train), tgt_vocab.to_sequence(tgt_test)
-    train_loader = DataLoader(TensorDataset(src_train, tgt_train), batch_size=train_batch_size, shuffle=True)
-    test_loader = DataLoader(TensorDataset(src_test, tgt_test), batch_size=test_batch_size, shuffle=True)
+    src_train, src_test = src_vocab.to_sequence(src_train, pad), src_vocab.to_sequence(src_test, pad)
+    tgt_train, tgt_test = tgt_vocab.to_sequence(tgt_train, pad), tgt_vocab.to_sequence(tgt_test, pad)
+    if pad:
+        train_loader = DataLoader(TensorDataset(src_train, tgt_train), batch_size=train_batch_size, shuffle=True)
+        test_loader = DataLoader(TensorDataset(src_test, tgt_test), batch_size=test_batch_size, shuffle=True)
+    else:
+        train_loader = make_minibatch(src_train, tgt_train)
+        test_loader = make_minibatch(src_test, tgt_test)
     return src_vocab, tgt_vocab, train_loader, test_loader
 
 ##########################
+
+def train_binary(model, iterator, labels, optimizer, criterion, clip=1, pad_tok=0):
+    model.train()
+    epoch_loss = 0
+    for i, ((src, tgt), label) in enumerate(tqdm(zip(iterator, labels), file=sys.stdout)):
+        optimizer.zero_grad()
+        # src.shape = (batch_size, src_seq_len)
+        # tgt.shape = (batch_size, tgt_seq_len)
+        src_mask = create_padding_mask(src, pad_tok)
+        src_mask, look_ahead_mask, dec_padding_mask = create_masks(src, tgt, pad_tok)
+
+
+        output = model(src)
+
+        loss = criterion(output, label.unsqueeze(-1))
+
+
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
+
+        optimizer.step()
+        epoch_loss += loss.item()
+
+    return epoch_loss / len(iterator)
+
+
 
 def train(model, iterator, optimizer, criterion, clip=1, pad_tok=0):
     model.train()
@@ -196,7 +266,7 @@ def translate(sentence, model, src_vocab, tgt_vocab, pad_tok=0):
         translation_tensor = torch.argmax(translation_tensor_logits, dim=-1)
         print(translation_tensor)
         translation = tgt_vocab.to_string(translation_tensor, remove_special=True)[0]
-        if attention is not None:
+        if attention is not None and not isinstance(attention, list):
             attention = attention.detach().squeeze(0)[:len(translation.split()),:len(tokenized_sent.split())]
         return translation, attention
 
