@@ -114,7 +114,7 @@ def preprocess_sentence(w):
     w = '<sos> ' + w + ' <eos>'
     return w
 
-def make_minibatch(src, tgt):
+def make_minibatch(src, tgt, max_size=32):
     join = [(s, t) for s, t in zip(src, tgt)]
     join.sort(key=lambda x: (len(x[0]), len(x[1])))
     tensors = []
@@ -122,7 +122,7 @@ def make_minibatch(src, tgt):
     current_tensor = (join[0][0].unsqueeze(0), join[0][1].unsqueeze(0))
     for next_tensor in join[1:]:
         shape = (next_tensor[0].size(0), next_tensor[1].size(0))
-        if shape == current_shape:
+        if shape == current_shape and current_tensor[0].size(0) < max_size:
             current_tensor = (torch.cat((current_tensor[0], next_tensor[0].unsqueeze(0)), dim=0), \
                               torch.cat((current_tensor[1], next_tensor[1].unsqueeze(0)), dim=0)
                               # torch.cat((current_tensor[2], next_tensor[2].unsqueeze(0)), dim=0)
@@ -152,8 +152,8 @@ def make_dataset(train_text, test_text, train_batch_size=32, test_batch_size=64,
         train_loader = DataLoader(TensorDataset(src_train, tgt_train), batch_size=train_batch_size, shuffle=True)
         test_loader = DataLoader(TensorDataset(src_test, tgt_test), batch_size=test_batch_size, shuffle=True)
     else:
-        train_loader = make_minibatch(src_train, tgt_train)
-        test_loader = make_minibatch(src_test, tgt_test)
+        train_loader = make_minibatch(src_train, tgt_train, train_batch_size)
+        test_loader = make_minibatch(src_test, tgt_test, test_batch_size)
     return src_vocab, tgt_vocab, train_loader, test_loader
 
 ##########################

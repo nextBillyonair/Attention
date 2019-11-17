@@ -121,7 +121,6 @@ class EncoderLayer(Module):
 
     def __init__(self, d_model, num_heads, dff, mha_hidden=None, rate=0.1):
         super().__init__()
-
         self.mha = MultiheadAttention(d_model, num_heads, hidden_size=mha_hidden)
         self.ffn = PointwiseFeedForward(d_model, dff)
 
@@ -192,9 +191,10 @@ class Encoder(Module):
         self.vocab_size = input_vocab_size
         self.embedding = Embedding(input_vocab_size, d_model)
         self.pos_encoding = PositionalEmbeddings(d_model, rate, maximum_position_encoding)
-
         enc_layers = [EncoderLayer(d_model, num_heads, dff, mha_hidden, rate) for _ in range(num_layers)]
         self.enc_layers = ModuleList(enc_layers)
+        self.output_size = d_model
+
 
 
     def forward(self, x, mask=None):

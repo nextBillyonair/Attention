@@ -45,7 +45,7 @@
 % \subtitle{Using Beamer}
 \author{Bill Watson}
 \institute{S\&P Global}
-\date{November 22, 2019}
+\date{\today}
 
 \newenvironment{nospaceflalign*}
  {\setlength{\abovedisplayskip}{0pt}\setlength{\belowdisplayskip}{0pt}%
@@ -72,13 +72,23 @@
 
 \begin{frame}
 \frametitle{What are Sequence to Sequence Models?}
-\begin{itemize}
-  \item Generally used to convert one set of tokens into another
+\begin{columns}
+  \begin{column}{0.45\textwidth}
   \begin{itemize}
-    \item Many - to - Many RNN
+    \item Generally used to convert one set of tokens into another
+    \begin{itemize}
+      \item Many - to - Many RNN
+    \end{itemize}
+    \item Bleak view: map a sequence of indexes to another independent set of indexes
   \end{itemize}
-  \item Bleak view: map a sequence of indexes to another independent set of indexes
-\end{itemize}
+  \end{column}
+  \begin{column}{0.45\textwidth}
+  \begin{figure}
+    \includegraphics[width=4cm]{assets/machine_learning}
+    \caption{The pile gets soaked with data and starts to get mushy over time, so it's technically recurrent.}
+  \end{figure}
+  \end{column}
+\end{columns}
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -366,27 +376,38 @@
 
 
 \begin{frame}
-\frametitle{BPE Tokenization on A Tale of Two Cities by Charles Dickens}
+\frametitle{BPE Tokenization on HHGTTG}
 \begin{itemize}
-  \item Unique Characters: $78$
-  \item Unique BPE Tokens (1K iterations): $1,071$
-  \item Unique BPE Tokens (5K iterations): $4,864$
-  \item Unique Tokens: $10,153$
+  \item Unique Characters: $101$
+  \item Unique BPE Tokens (1K iterations): $1,093$
+  \item Unique BPE Tokens (5K iterations): $4,817$
+  \item Unique Tokens: $9,541$
 \end{itemize}
 \footnotesize
 \begin{equation*}
 \textcolor{ForestGreen}{
 \begin{array}{l}
-  \texttt{it was the b\textcolor{Fuchsia}{@@} est of times ,} \\
-  \texttt{it was the wor\textcolor{Fuchsia}{@@} st of times ,} \\
-  \texttt{it was the age of w\textcolor{Fuchsia}{@@} is\textcolor{Fuchsia}{@@} do\textcolor{Fuchsia}{@@} m ,} \\
-  \texttt{it was the age of foo\textcolor{Fuchsia}{@@} li\textcolor{Fuchsia}{@@} sh\textcolor{Fuchsia}{@@} ness ,} \\
-  \texttt{it was the e\textcolor{Fuchsia}{@@} po\textcolor{Fuchsia}{@@} ch of beli\textcolor{Fuchsia}{@@} e\textcolor{Fuchsia}{@@} f ,} \\
-  \texttt{it was the e\textcolor{Fuchsia}{@@} po\textcolor{Fuchsia}{@@} ch of in\textcolor{Fuchsia}{@@} cre\textcolor{Fuchsia}{@@} du\textcolor{Fuchsia}{@@} l\textcolor{Fuchsia}{@@} ity ,} \\
-  \texttt{it was the s\textcolor{Fuchsia}{@@} ea\textcolor{Fuchsia}{@@} son of light ,} \\
-  \texttt{it was the s\textcolor{Fuchsia}{@@} ea\textcolor{Fuchsia}{@@} son of dar\textcolor{Fuchsia}{@@} k\textcolor{Fuchsia}{@@} ness ,} \\
-  \texttt{it was the sp\textcolor{Fuchsia}{@@} r\textcolor{Fuchsia}{@@} ing of hope ,} \\
-  \texttt{it was the win\textcolor{Fuchsia}{@@} ter of des\textcolor{Fuchsia}{@@} pa\textcolor{Fuchsia}{@@} ir} \\
+  \texttt{there is a the\textcolor{Fuchsia}{@@} ory which st\textcolor{Fuchsia}{@@} at\textcolor{Fuchsia}{@@} es that if ever any\textcolor{Fuchsia}{@@} one } \\
+  \texttt{di\textcolor{Fuchsia}{@@} sc\textcolor{Fuchsia}{@@} o\textcolor{Fuchsia}{@@} ver\textcolor{Fuchsia}{@@} s ex\textcolor{Fuchsia}{@@} ac\textcolor{Fuchsia}{@@} tly what the universe is for } \\
+  \texttt{and why it is here , it will in\textcolor{Fuchsia}{@@} stan\textcolor{Fuchsia}{@@} tly di\textcolor{Fuchsia}{@@} s\textcolor{Fuchsia}{@@} ap\textcolor{Fuchsia}{@@} pe\textcolor{Fuchsia}{@@} ar } \\
+  \texttt{and be re\textcolor{Fuchsia}{@@} pl\textcolor{Fuchsia}{@@} ac\textcolor{Fuchsia}{@@} ed by something even more bi\textcolor{Fuchsia}{@@} zar\textcolor{Fuchsia}{@@} re } \\
+  \texttt{and in\textcolor{Fuchsia}{@@} ex\textcolor{Fuchsia}{@@} p\textcolor{Fuchsia}{@@} li\textcolor{Fuchsia}{@@} c\textcolor{Fuchsia}{@@} able . } \\
+  \texttt{there is another the\textcolor{Fuchsia}{@@} ory which st\textcolor{Fuchsia}{@@} at\textcolor{Fuchsia}{@@} es that } \\
+  \texttt{this has al\textcolor{Fuchsia}{@@} re\textcolor{Fuchsia}{@@} ad\textcolor{Fuchsia}{@@} y happ\textcolor{Fuchsia}{@@} ened .} \\
+  \texttt{in the beg\textcolor{Fuchsia}{@@} in\textcolor{Fuchsia}{@@} ning the universe was cre\textcolor{Fuchsia}{@@} ated . } \\
+  \texttt{this has made a lot of people very an\textcolor{Fuchsia}{@@} gr\textcolor{Fuchsia}{@@} y and } \\
+  \texttt{been wi\textcolor{Fuchsia}{@@} de\textcolor{Fuchsia}{@@} ly re\textcolor{Fuchsia}{@@} gar\textcolor{Fuchsia}{@@} ded as a b\textcolor{Fuchsia}{@@} ad mo\textcolor{Fuchsia}{@@} ve .}
+  %
+  % \texttt{it was the b\textcolor{Fuchsia}{@@} est of times ,} \\
+  % \texttt{it was the wor\textcolor{Fuchsia}{@@} st of times ,} \\
+  % \texttt{it was the age of w\textcolor{Fuchsia}{@@} is\textcolor{Fuchsia}{@@} do\textcolor{Fuchsia}{@@} m ,} \\
+  % \texttt{it was the age of foo\textcolor{Fuchsia}{@@} li\textcolor{Fuchsia}{@@} sh\textcolor{Fuchsia}{@@} ness ,} \\
+  % \texttt{it was the e\textcolor{Fuchsia}{@@} po\textcolor{Fuchsia}{@@} ch of beli\textcolor{Fuchsia}{@@} e\textcolor{Fuchsia}{@@} f ,} \\
+  % \texttt{it was the e\textcolor{Fuchsia}{@@} po\textcolor{Fuchsia}{@@} ch of in\textcolor{Fuchsia}{@@} cre\textcolor{Fuchsia}{@@} du\textcolor{Fuchsia}{@@} l\textcolor{Fuchsia}{@@} ity ,} \\
+  % \texttt{it was the s\textcolor{Fuchsia}{@@} ea\textcolor{Fuchsia}{@@} son of light ,} \\
+  % \texttt{it was the s\textcolor{Fuchsia}{@@} ea\textcolor{Fuchsia}{@@} son of dar\textcolor{Fuchsia}{@@} k\textcolor{Fuchsia}{@@} ness ,} \\
+  % \texttt{it was the sp\textcolor{Fuchsia}{@@} r\textcolor{Fuchsia}{@@} ing of hope ,} \\
+  % \texttt{it was the win\textcolor{Fuchsia}{@@} ter of des\textcolor{Fuchsia}{@@} pa\textcolor{Fuchsia}{@@} ir} \\
 \end{array}}
 \end{equation*}
 \end{frame}
@@ -553,7 +574,10 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
   \item Assume the embedding $E\left[ \textcolor{WildStrawberry}{\langle \texttt{PAD} \rangle} \right] = \mathbf{0}$
   \item Are we safe? \pause \textbf{NO!}
   \item Because of the bias term, zero input does not result in a zero output
-  \item This alters the hidden state being passed onto the next iteration
+  \begin{itemize}
+    \item This alters the hidden state being passed onto the next iteration
+  \end{itemize}
+  \item Don't even think about the mess bidirectionals become...
   \item \textbf{Question:} Does this mean we learn the amount of padding for a given sequence?
 \end{itemize}
 \end{frame}
@@ -850,6 +874,172 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
       \end{itemize}
   \end{itemize}
 \end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Bill's Application: Column Segmention}
+
+\begin{frame}
+  \frametitle{Problem Statement: Column Segmentation}
+  \begin{figure}
+    \includegraphics[width=4.25cm, valign=c]{assets/table}
+    $\rightarrow$
+    \includegraphics[width=4.25cm, valign=c]{assets/csv}
+  \end{figure}
+  \begin{itemize}
+    \item Given a sequence of text, can we predict where to insert columns?
+  \end{itemize}
+  % picture of table
+\end{frame}
+
+\begin{frame}
+  \frametitle{Issue: Vocabulary Size}
+  \begin{itemize}
+    \item Is the text actually important?
+    \item Over 10K unique tokens, mostly numbers
+    \item \textbf{Solutions:}
+    \begin{itemize}
+      \item Token $\rightarrow$ Part-of-Speech
+      \item Numeric Value $\rightarrow \langle \texttt{NUM} \rangle$
+    \end{itemize}
+    \item Reduces vocabulary size to 21 tokens
+  \end{itemize}
+  % picture of table
+\end{frame}
+
+\begin{frame}
+  \frametitle{Regular Seq2Seq}
+  \begin{itemize}
+    \item Translation Task
+    \item Given a sequence of tokens
+    \item Translate into the same set of tokens, but with a special $\langle \texttt{SEG} \rangle$ token
+  \end{itemize}
+  \vspace{5mm}
+  \begin{equation*}
+    \centering
+    \textcolor{ForestGreen}{
+    \begin{array}{ccccccc}
+      \texttt{Less} & \texttt{imputed} & \texttt{interest} & {} & \texttt{(} & \texttt{174,862.64} & \texttt{)} \\
+      {} & {} & {} & \textcolor{BrickRed}{\big\Downarrow} & {} & {} & {} \\
+      \texttt{Less} & \texttt{imputed} & \texttt{interest} & \textcolor{WildStrawberry}{\langle\texttt{SEG}\rangle} & \texttt{(} & \texttt{174,862.64} & \texttt{)} \\
+    \end{array}}
+  \end{equation*}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Seq2Seq Architecture}
+  \begin{figure}
+    \centering
+    \includegraphics[width=10cm, valign=c]{assets/enc-dec}
+  \end{figure}
+  % add picture from notebook
+  \begin{figure}
+    \centering
+    \includegraphics[width=10cm, valign=c]{assets/col-seq2seq}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Seq2Seq: Sample Results}
+  \begin{equation*}
+    \textcolor{ForestGreen}{
+    \begin{array}{cl}
+      \texttt{>} & \texttt{num num num punct} \\
+      \texttt{=} & \texttt{num \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} num \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} num \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} punct} \\
+      \texttt{<} & \texttt{num \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} num \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} num \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} punct} \\
+      \\
+      \texttt{>} & \texttt{adj num num num} \\
+      \texttt{=} & \texttt{adj \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} num \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} num \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} num} \\
+      \texttt{<} & \texttt{adj \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} num \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} num \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} num num num num num} \\
+      \\
+      \texttt{>} & \texttt{verb noun noun noun noun noun verb} \\
+      \texttt{=} & \texttt{verb \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} noun noun \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} noun noun noun \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} verb} \\
+      \texttt{<} & \texttt{verb noun \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} noun noun noun noun \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} noun } \cdots \\
+    \end{array}}
+  \end{equation*}
+  % something
+  % metrics
+  % graphs
+\end{frame}
+
+\begin{frame}
+  \frametitle{Secondary Approach: Throw away the decoder}
+  \begin{itemize}
+    \item Just use an encoder, with an output layer
+    \item For every token, predict if we should insert a $\textcolor{WildStrawberry}{\langle \texttt{SEG} \rangle}$
+    \item No longer have to learn the actual sequence
+  \end{itemize}
+  \begin{figure}
+    \centering
+    \includegraphics[width=10cm, valign=c]{assets/col-encoder}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Secondary Approach: Training Labels}
+  \begin{itemize}
+    \item Labels are now binary vectors, where $x_i = 1$ implies that there is a $\textcolor{WildStrawberry}{\langle \texttt{SEG} \rangle}$
+      between $x_i$ and $x_{i+1}$
+  \end{itemize}
+  \vspace{5mm}
+  \begin{equation*}
+    \centering
+    \textcolor{ForestGreen}{
+    \begin{array}{cccccccc}
+      \texttt{Less} & \texttt{imputed} & \texttt{interest} & {} & \texttt{(} & \texttt{174,862.64} & \texttt{)} \\
+      \textcolor{Fuchsia}{\texttt{0}} & \textcolor{Fuchsia}{\texttt{0}} & \textcolor{Fuchsia}{\texttt{\textbf{1}}} & {} & \textcolor{Fuchsia}{\texttt{0}} & \textcolor{Fuchsia}{\texttt{0}} & \textcolor{Fuchsia}{\texttt{0}} \\
+      \texttt{Less} & \texttt{imputed} & \texttt{interest} & \textcolor{WildStrawberry}{\langle \texttt{SEG} \rangle} & \texttt{(} & \texttt{174,862.64} & \texttt{)} \\
+    \end{array}}
+  \end{equation*}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Secondary Approach: Sample Results}
+  \begin{figure}
+    \centering
+    \includegraphics[height=3.75cm, valign=c]{assets/cm}
+    \includegraphics[height=3.75cm, valign=c]{assets/cm_norm}
+  \end{figure}
+  \begin{center}
+    \begin{tabular}{rcccr}
+    \toprule
+    {} &  Precision &  Recall &  F1-Score & Support \\
+    \midrule
+    Label: 0 & $1.00$ & $0.94$ & $0.97$ & $168,275$ \\
+    Label: 1 & $0.74$ & $0.98$ & $0.85$ & $28,685$ \\
+    \midrule
+    accuracy & {} & {} & $0.95$ & $196,960$ \\
+    macro avg & $0.87$ & $0.96$ & $0.91$ & $196,960$ \\
+    weighted avg & $0.96$ & $0.95$ & $0.95$ & $196,960$ \\
+    \bottomrule
+    \end{tabular}
+  \end{center}
+  % something
+  % metrics
+  % graphs
+\end{frame}
+
+\begin{frame}
+  \frametitle{Future Plans}
+  \begin{itemize}
+    \item Features
+    \begin{itemize}
+      \item Use segment location information
+      \item Tesseract gives bounding box information
+    \end{itemize}
+    \item Encoder Structure
+    \begin{itemize}
+      \item Convolution
+      \item Transformer
+    \end{itemize}
+    \item Ensembling
+    \begin{itemize}
+      \item Treat rows as independent, then aggregate predicted column segments
+      \item Jointly train on all sequences in a table, mixing the individual rows
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
