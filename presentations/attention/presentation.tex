@@ -1,4 +1,4 @@
-\documentclass{beamer}
+\documentclass[usenames,dvipsnames]{beamer}
 \usepackage[utf8]{inputenc} % allow utf-8 input
 \usepackage[T1]{fontenc}    % use 8-bit T1 fonts
 \usepackage{hyperref}       % hyperlinks
@@ -69,14 +69,23 @@
 
 \begin{frame}
 \frametitle{Recap: Encoder-Decoder Models}
-
+\begin{figure}
+  \centering
+  \includegraphics[width=10cm, valign=c]{assets/enc-dec}
+\end{figure}
+\begin{itemize}
+  \item \textbf{Encoders:} Give the source sentence meaning
+  \item \textbf{Decoders:} Emit a variable-length sequence
+  \item \textbf{Seq2Seq} models rely on propagating the hidden state for generation
+\end{itemize}
 \end{frame}
 
 \begin{frame}
 \frametitle{How can we improve this model?}
 \begin{itemize}
-  \item Add an alignment model to force the model to 'attend' to different parts of the input
-  \item Gives model acess to the encodings for the input directly
+  \item Add an \textbf{alignment model} to force the model to 'attend' to different parts of the input
+  \item Gives the decoder direct access to the encodings to make generations
+  \item Known as a \textbf{context vector}
 \end{itemize}
 \end{frame}
 
@@ -89,8 +98,64 @@
   \item A \textbf{context vector} $c_i$ is the weighted sum of the encodings for the $i$-th iteration of the decoder
   \item $s_{i-1}$ is the previous hidden state of the decoder
   \item $h_j$ is the encoding for the $j$-th input word
-  \item $\alpha_ij$ is the weight associated for the $j$-th input word for the $i$-th deocding iteration
+  \item $\alpha_{ij}$ is the weight associated for the $j$-th input word for the $i$-th deocding iteration
 \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{How to use Context Vectors?}
+  \begin{itemize}
+    \item No general rule
+    \item Usually, \textbf{concat} the token embedding with context vector $c_i$
+    \item Pass this as the input to the RNN, along with the previous decoder state $s_{i-1}$ as the hidden state
+  \end{itemize}
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{Visual}
+  \begin{figure}
+      \centering
+      \begin{tikzpicture}[shorten >=1pt,node distance=1.5cm,on grid,auto, every node/.style={scale=0.75}]
+        \node[] (x) {$x_{i-1}$};
+
+        \node[draw,diamond] (h0) [above=of x] {$h_k$};
+        \node[] (h1) [above=of h0, yshift=-1cm] {$\vdots$};
+        \node[draw,diamond] (h2) [above=of h1, yshift=-1cm] {$h_j$};
+        \node[] (h3) [above=of h2, yshift=-1cm] {$\vdots$};
+        \node[draw,diamond] (h4) [above=of h3, yshift=-1cm] {$h_0$};
+
+        \node[] (c) [right=of h2] {$c_i$};
+
+        \node[]  (emb) [right=of x, xshift=1cm] {Embedding};
+        \node[]  (concat) [right=of c, xshift=1cm] {Concat};
+        \node[] (rnn) [right=of concat, xshift=0.5cm] {RNN};
+
+        \node[] (xn) [right=of rnn] {$x_{i}$};
+
+        \node[] (s) [above=of rnn] {$s_{i-1}$};
+
+
+        \node[] (sn) [below=of rnn] {$s_i$};
+
+        \draw[->] (x) to (emb) node [] {};
+        \draw[->] (emb) to (concat) node [] {};
+        \draw[->] (c) to (concat) node [] {};
+
+        \draw[->] (h0) to (c) node [] {};
+        \draw[->] (h2) to (c) node [] {};
+        \draw[->] (h4) to (c) node [] {};
+
+        % \draw[->] (c) to (concat) node [] {};
+        % \path [->] (c) edge [bend left=30] node {} (concat);
+        \path [->] (s) edge [bend right=15] node {} (c);
+        \draw[->] (concat) to (rnn) node [] {};
+        \draw[->] (s) to (rnn) node [] {};
+        \draw[->] (rnn) to (sn) node [] {};
+        \draw[->] (rnn) to (xn) node [] {};
+
+      \end{tikzpicture}
+    \end{figure}
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -100,14 +165,14 @@
 \frametitle{Mean Attention}
 \begin{equation*}
   \begin{split}
-  \alpha_ij &= \frac{1}{J} \\
-  c_i &= \frac{1}{J} \sum_j^J h_j = \sum_{j} \alpha_{ij} \cdot h_j
+  \alpha_{ij} &= \frac{1}{S} \\
+  c_i &= \frac{1}{S} \sum_j^S h_j = \sum_{j} \alpha_{ij} \cdot h_j
   \end{split}
 \end{equation*}
 \begin{itemize}
   \item Very simple and naive approach is to apply uniform weights to each encoding $h_j$
   \item Fancy way of saying average
-  \item $J$ is the length of the source sentence
+  \item $S$ is the length of the source sentence
 \end{itemize}
 \end{frame}
 
@@ -150,6 +215,13 @@
 \end{frame}
 
 \begin{frame}
+  \frametitle{Review: Laplace and Gaussian}
+  \begin{figure}
+    \includegraphics[width=\textwidth]{assets/dist}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
 \frametitle{Visualizing Location-Based Distributions}
 \begin{columns}
   \begin{column}{0.45\textwidth}
@@ -169,8 +241,6 @@
 
 \end{columns}
 \end{frame}
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{(Parameter-based) Attention Mechanisms}
 
@@ -180,10 +250,10 @@
 \begin{itemize}
   \item Why not use learnable weights to effectively mix the encodings?
   \item Let deep learning figure out the alignment
-  \item We know define a scoring function conditioned on the previous hidden state and input encoding
+  \item We now define a scoring function conditioned on the previous decoder state $s_{i-1}$ and input encodings $h_j$
 \end{itemize}
 \begin{equation*}
-  a\left( s_{i-1}, h_j \right) = ?
+  a\left( s_{i-1}, h_j \right) = \;?
 \end{equation*}
 \begin{itemize}
   \item In order to constrain the weights to a valid distribution, we softmax
@@ -196,11 +266,96 @@
 \end{equation*}
 \end{frame}
 
+
+
+\begin{frame}
+  \frametitle{Attention Computation Graph}
+  \begin{figure}
+      \centering
+      \begin{tikzpicture}[shorten >=1pt,node distance=1.25cm,on grid,auto, every node/.style={scale=0.75}]
+
+
+        \node[draw,diamond]  (h2)  {$h_j$};
+        \node[]  (h1) [above=of h2] {$\vdots$};
+        \node[]  (h3) [below=of h2] {$\vdots$};
+        \node[draw,diamond] [above=of h1]  (h0)  {$h_0$};
+        \node[draw,diamond]  (h4) [below=of h3] {$h_{k}$};
+
+        \node[] (s) [left=of h2] {$s_{i-1}$};
+
+        \node[]   (a0) [right=of h0, xshift=0.75cm] {$a\left( s_{i-1}, h_0 \right)$};
+        \node[]   (a1) [right=of h1, xshift=0.75cm] {$\vdots$};
+        \node[]   (a2) [right=of h2, xshift=0.75cm] {$a\left( s_{i-1}, h_j \right)$};
+        \node[]   (a3) [right=of h3, xshift=0.75cm] {$\vdots$};
+        \node[]   (a4) [right=of h4, xshift=0.75cm] {$a\left( s_{i-1}, h_k \right)$};
+
+        \node[] (softmax) [right=of a2, xshift=1.5cm] {$\frac{\exp\left( a\left( s_{i-1}, h_j \right) \right)}{\sum_k \exp\left( a\left( s_{i-1}, h_k \right) \right)}$};
+
+        \node[] (mult0) [right=of a0, xshift=4.5cm] {$\alpha_{i0} \cdot h_0$};
+        \node[] (mult1) [right=of a1, xshift=4.5cm] {$\vdots$};
+        \node[] (mult2) [right=of a2, xshift=4.5cm] {$\alpha_{ij} \cdot h_j$};
+        \node[] (mult3) [right=of a3, xshift=4.5cm] {$\vdots$};
+        \node[] (mult4) [right=of a4, xshift=4.5cm] {$\alpha_{ik} \cdot h_k$};
+
+        \node[] (sum) [right=of mult2, xshift=0.25cm] {$\sum_j$};
+
+        \node[] (c) [right=of sum, xshift=-0.25cm] {$c_i$};
+
+        \draw[->] (h0) to (a0) node [] {};
+        \draw[->] (h2) to (a2) node [] {};
+        \draw[->] (h4) to (a4) node [] {};
+
+        \draw[->] (a0) to (softmax) node [] {};
+        \draw[->] (a2) to (softmax) node [] {};
+        \draw[->] (a4) to (softmax) node [] {};
+
+        \draw[->] (softmax) to (mult0) node [] {};
+        \draw[->] (softmax) to (mult2) node [] {};
+        \draw[->] (softmax) to (mult4) node [] {};
+
+        \draw[->] (mult0) to (sum) node [] {};
+        \draw[->] (mult2) to (sum) node [] {};
+        \draw[->] (mult4) to (sum) node [] {};
+
+        \draw[->] (sum) to (c) node [] {};
+
+        \path [->] (h0) edge [bend left=30] node {} (mult0);
+        \path [->] (h2) edge [bend left=40] node {} (mult2);
+        \path [->] (h4) edge [bend right=30] node {} (mult4);
+
+        \path [->] (s) edge [bend left=20] node {} (a0);
+        \path [->] (s) edge [bend right=40] node {} (a2);
+        \path [->] (s) edge [bend right=20] node {} (a4);
+
+      \end{tikzpicture}
+    \end{figure}
+\end{frame}
+
 \begin{frame}
 \frametitle{Bahdanau Attention}
 \begin{equation*}
   a\left( s_{i-1}, h_j \right) = v_a^T \tanh \left( W_a s_{i-1} + U_a h_j + b \right)
 \end{equation*}
+\begin{itemize}
+  \item $W_a$, $U_a$, are learnable matrices
+  \item $v_a$, $b$ are learnable vectors
+  \item Output is a scalar value
+  \item AKA: Additive Attention, Concat Attention
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Bahdanau Attention Visual}
+  \begin{figure}
+    \includegraphics[height=7.25cm]{assets/concat1}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Bahdanau Attention Visual}
+  \begin{figure}
+    \includegraphics[height=7.25cm]{assets/concat2}
+  \end{figure}
 \end{frame}
 
 
@@ -209,6 +364,11 @@
 \begin{equation*}
   a\left( s_{i-1}, h_j \right) = s_{i-1}^T h_j
 \end{equation*}
+\begin{itemize}
+  \item Notice: No Learnable Parameters
+  \item Simple dot product between decoder state and encoding
+  \item Output is a scalar value
+\end{itemize}
 \end{frame}
 
 \begin{frame}
@@ -216,6 +376,11 @@
 \begin{equation*}
   a\left( s_{i-1}, h_j \right) = \frac{1}{\sqrt{\lvert h_j \rvert}} s_{i-1}^T h_j
 \end{equation*}
+\begin{itemize}
+  \item Rescale the dot product accoridng to the dimensionality of the vectors
+  \item \textbf{Why?} Because for large dimensionality, the dot-product is large in magnitude, resulting in small gradients from the softmax
+  \item Output is a scalar value
+\end{itemize}
 \end{frame}
 
 \begin{frame}
@@ -223,17 +388,141 @@
 \begin{equation*}
   a\left( s_{i-1}, h_j \right) = s_{i-1}^T W_a h_j
 \end{equation*}
+\begin{itemize}
+  \item Allow a learnable matrix $W_a$ inbetween the states
+  \item AKA a Bilinear Layer: $x_0^T A x_1$
+  \item Output is a scalar value
+\end{itemize}
 \end{frame}
 
 \begin{frame}
-\frametitle{Luong Attention: Local Attention}
+\frametitle{Luong Attention: Location Attention}
 \begin{equation*}
-  a\left( s_{i-1}, h_j \right) = W_a s_{i-1}
+  a\left( s_{i-1}, h_j \right) = W_a h_j
 \end{equation*}
+\begin{itemize}
+  \item An approach to reweight exclusively on the decoder state
+  \item Single learnable matrix $W_a$
+  \item Output is scalar
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Luong Attention Visual}
+  \begin{columns}
+  \begin{column}{0.45\textwidth}
+  \begin{figure}
+    \includegraphics[width=5cm]{assets/global}
+    \caption{Luong Attention}
+  \end{figure}
+\end{column}
+\begin{column}{0.45\textwidth}
+  \begin{figure}
+    \includegraphics[width=5cm]{assets/gold}
+    \caption{Gold Alignments}
+  \end{figure}
+\end{column}
+  \end{columns}
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{(Advanced) Attention Mechanisms}
+
+\begin{frame}
+  \frametitle{Luong Attention: Local Attention}
+  \begin{itemize}
+    \item What if we focused on a window instead of all the vectors?
+    \item This approach is known as \textit{local} attention
+    \item Before, we were using \textit{global} attention
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Luong Attention: Local Attention}
+  \begin{itemize}
+    \item Define a window $\mathcal{W}$ of size $2D$ at alignment point $p_t$:
+  \end{itemize}
+  \begin{equation*}
+    \mathcal{W} = \left[ p_t - D, p_t + D \right]
+  \end{equation*}
+  \begin{itemize}
+    \item Our context vector is now an average over this window
+  \end{itemize}
+  \begin{equation*}
+    c_i = \sum_{j \in \mathcal{W}} \alpha_{ij} \cdot h_j
+  \end{equation*}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Luong Attention: Local Attention}
+  \begin{itemize}
+    \item How do we select $p_t$, the alignment position?
+    \item \textbf{Monotonic} alignment - set $p_t = t$
+    \begin{itemize}
+      \item Assumes \texttt{src} and \texttt{trg} are roughly monotonically aligned
+    \end{itemize}
+    \item \textbf{Predictive} alignment - predict the aligned position
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Luong Attention: Local Predictive Attention}
+  \begin{equation*}
+    p_t = S \cdot \sigma \left( v_p^T \tanh \left( W_p \cdot s_{i-1} \right) \right)
+  \end{equation*}
+  \begin{itemize}
+    \item \textbf{Predictive} alignment allows for learnable positions
+    \item $S$ is the length of the source sentence
+    \item $W_p$ and $v_p$ are learnable
+    \item Sigmoid enforces the constraint $p_t \in \left[ 0, S \right]$
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Luong Attention: Local Predictive Attention}
+  \begin{equation*}
+    a_{p} \left( s_{i-1}, h_j \right) = a\left( s_{i-1}, h_j \right) \cdot \exp \left( -\frac{ \left(j - p_t\right)^{2} }{2\sigma^2} \right)
+  \end{equation*}
+  \begin{itemize}
+    \item Use a gaussian penalty to favor words near $p_t$
+    \item Note: $p_t \in \mathbb{R}$, $j \in \mathbb{Z}$
+    \item $j$ is the \textit{integer} position of the encoding
+    \item $a\left( s_{i-1}, h_j \right)$ is any previous attention mechanism
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Luong Attention Visuals}
+  \begin{columns}
+    \begin{column}{0.45\textwidth}
+      \vspace{-5mm}
+    \begin{figure}
+      \includegraphics[width=0.95\textwidth]{assets/global}
+      \caption{Global Attention}
+    \end{figure}
+    \vspace{-7mm}
+    \begin{figure}
+      \includegraphics[width=0.95\textwidth]{assets/local_p}
+      \caption{Local-P}
+    \end{figure}
+    \end{column}
+
+    \begin{column}{0.45\textwidth}
+      \vspace{-5mm}
+    \begin{figure}
+      \includegraphics[width=0.95\textwidth]{assets/local_m}
+      \caption{Local-M}
+    \end{figure}
+    \vspace{-7mm}
+    \begin{figure}
+      \includegraphics[width=0.95\textwidth]{assets/gold}
+      \caption{Gold Alignments}
+    \end{figure}
+    \end{column}
+
+  \end{columns}
+\end{frame}
 
 \begin{frame}
 \frametitle{Fine-Grained Attention}
@@ -246,6 +535,22 @@
 \begin{equation*}
   c_i = \sum_j \alpha_{ij} \odot h_j
 \end{equation*}
+\begin{itemize}
+  \item What's different?
+  \item Instead of a scalar scoring function, have it output a weight \textit{per} dimension
+  \item Now a weighted average on the feature dimension \textit{instead} of the entire encoding
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Fine-Grained Attention}
+  \begin{equation*}
+    c_i = \textcolor{BrickRed}{0.64} \cdot \begin{bmatrix*}[r] 0.17 \\ 0.53 \\ -0.22 \end{bmatrix*} + \textcolor{BrickRed}{0.12} \cdot \begin{bmatrix*}[r] 1.34 \\ 0.39 \\ 0.45 \end{bmatrix*} + \textcolor{BrickRed}{0.24} \cdot \begin{bmatrix*}[r] -0.08 \\ -1.39 \\ 1.21 \end{bmatrix*}
+  \end{equation*}
+  \vspace{1.5cm}
+  \begin{equation*}
+    c_i = \begin{bmatrix} \textcolor{WildStrawberry}{0.59} \\ \textcolor{Fuchsia}{0.18} \\ \textcolor{ForestGreen}{0.16} \end{bmatrix} \cdot \begin{bmatrix*}[r] 0.17 \\ 0.53 \\ -0.22 \end{bmatrix*} + \begin{bmatrix} \textcolor{WildStrawberry}{0.09} \\ \textcolor{Fuchsia}{0.36} \\ \textcolor{ForestGreen}{0.74} \end{bmatrix} \cdot \begin{bmatrix*}[r] 1.34 \\ 0.39 \\ 0.45 \end{bmatrix*} + \begin{bmatrix} \textcolor{WildStrawberry}{0.32} \\ \textcolor{Fuchsia}{0.46} \\ \textcolor{ForestGreen}{0.10} \end{bmatrix} \cdot \begin{bmatrix*}[r] -0.08 \\ -1.39 \\ 1.21 \end{bmatrix*}
+  \end{equation*}
 \end{frame}
 
 \begin{frame}
@@ -253,14 +558,72 @@
 \begin{equation*}
   \alpha_{ij}^d = \frac{\exp\left(a^d\left(s_{i-1}, h_j\right)\right)}{\sum_k \exp \left( a^d \left(s_{i-1}, h_k\right) \right)}
 \end{equation*}
-
+\begin{itemize}
+  \item Why not have $K$ attention weights?
+\end{itemize}
 \begin{equation*}
   \alpha_{ij} = \frac{1}{k} \sum_k \alpha^k_{ij}
 \end{equation*}
+\begin{itemize}
+  \item \textit{Multi-Headed Attention} is just aggregating several attended representations of the encodings
+  \item Fancy way of ensembling attention mechanisms
+\end{itemize}
 \end{frame}
 
 \begin{frame}
-\frametitle{Self Attention}
+  \frametitle{Multi-Headed Attention}
+  \begin{equation*}
+    \begin{split}
+    \alpha_{ij}^d &= \frac{\exp\left(a^d\left(s_{i-1}, h_j\right)\right)}{\sum_k \exp \left( a^d \left(s_{i-1}, h_k\right) \right)}\\
+    \alpha_{ij} &= \begin{bmatrix*} \alpha^0_{ij} \\ \vdots \\ \alpha^k_{ij} \\ \vdots \\ \alpha^K_{ij} \end{bmatrix*} W_a
+  \end{split}
+  \end{equation*}
+  \begin{itemize}
+    \item \textbf{Alternative:} Concat each weight and use a linear layer to reduce the dimensionality
+    \item Weighted Average of $K$ Weighted Averages!
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{MHA Visual from the Paper}
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{Self-Attention: Generalized}
+  \begin{equation*}
+    \texttt{Attention}\left(Q, K, V \right) = \texttt{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right) V
+  \end{equation*}
+  \begin{itemize}
+    \item Query $Q$, Key $K$, and Value $V$
+    \item $d_k$ is the dimensionality of the query and keys
+    \item \textbf{Note} that this implies that we can re-mix the encodings via linear layers before attending
+    \item \textbf{Note} the similiarity to Luong's Scaled Dot Attention
+  \end{itemize}
+\end{frame}
+
+% MESSY
+\begin{frame}
+  \frametitle{Self-Attention: What are Queries, Keys, and Values?}
+  \begin{itemize}
+    \item \textbf{Encoders}
+    \begin{itemize}
+      \item Source Embeddings, optionally re-mixed with linear layers
+    \end{itemize}
+  \end{itemize}
+  \begin{itemize}
+    \item \textbf{Decoders}
+    \begin{itemize}
+      \item More complicated...
+      \item Technically 2 Self-Attentions
+      \item One that is the decoded embeddings
+      \item Then use that as the value for a second attention
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Self Attention: Familiar Notation}
 \begin{equation*}
   a_{ij} = \frac{1}{|h|} h_{j}h_k^T
 \end{equation*}
@@ -275,7 +638,7 @@
 \end{frame}
 
 \section{Practical Considerations}
-
+% Rework
 \begin{frame}
 \frametitle{Masking}
 
@@ -283,12 +646,20 @@
 
 \begin{frame}
 \frametitle{Which one to use?}
-
+\begin{itemize}
+  \item Trend seems to be moving towards \textbf{Transformers}
+  \item AKA a series of Self-Attentions inside Multi-headed Attentions
+  \item Ideally, experiment and go crazy
+\end{itemize}
 \end{frame}
 
 \begin{frame}
 \frametitle{Mixing and Matching}
-
+  \begin{itemize}
+    \item Remember! You can always mix and match!
+    \item Different attention mechanisms under MHA
+    \item Etc, etc
+  \end{itemize}
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

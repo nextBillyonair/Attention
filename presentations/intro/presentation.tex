@@ -104,7 +104,7 @@
   \end{itemize}
   \item Decoders
   \begin{itemize}
-    \item Given the source sentence, emit a variable-length sequence
+    \item Emit a variable-length sequence
   \end{itemize}
   \item We will discuss how to connect the two for joint training
 \end{itemize}
@@ -900,7 +900,7 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
     \item \textbf{Solutions:}
     \begin{itemize}
       \item Token $\rightarrow$ Part-of-Speech
-      \item Numeric Value $\rightarrow \langle \texttt{NUM} \rangle$
+      \item Numeric Value $\rightarrow$ \textcolor{Fuchsia}{$\langle \texttt{NUM} \rangle$}
     \end{itemize}
     \item Reduces vocabulary size to 21 tokens
   \end{itemize}
@@ -912,7 +912,7 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
   \begin{itemize}
     \item Translation Task
     \item Given a sequence of tokens
-    \item Translate into the same set of tokens, but with a special $\langle \texttt{SEG} \rangle$ token
+    \item Translate into the same set of tokens, but with a special \textcolor{WildStrawberry}{$\langle \texttt{SEG} \rangle$} token
   \end{itemize}
   \vspace{5mm}
   \begin{equation*}
