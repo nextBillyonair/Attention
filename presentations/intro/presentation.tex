@@ -41,7 +41,7 @@
 
 % \usetheme{Boadilla}
 
-\title{Introduction to Seq2Seq Modeling}
+\title{Seq2Seq in Action: Column Segmentation}
 % \subtitle{Using Beamer}
 \author{Bill Watson}
 \institute{S\&P Global}
@@ -89,6 +89,121 @@
   \end{figure}
   \end{column}
 \end{columns}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Use Case: Extracting Tables from Images}
+
+\begin{frame}
+  \frametitle{Primer: What are we trying to accomplish}
+  \begin{itemize}
+    \item Tabular data is locked in PDFs
+    \begin{itemize}
+      \item Either as a typeset document
+      \item Or as a scanned image
+    \end{itemize}
+    \item Sometimes copy \& paste won't suffice (or impossible with images)
+    \item Let's take a quick look at the full pipeline to see where Seq2Seq models can fit in
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{What is our data?}
+  \begin{figure}
+    \includegraphics[width=3.5cm, valign=c]{assets/table_big}
+    \includegraphics[width=3.5cm, valign=c]{assets/table_small}
+    \includegraphics[width=3.5cm, valign=c]{assets/table_rotated}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Current Pipeline for Table Extraction}
+  \begin{itemize}
+    \item Convert to an Image
+    \item Binary Page Classification: Is there a table on this page?
+    \item Table Segmentation: U-Net Model
+    \item Optical Character Recognition via Tesseract
+    \item \textbf{Column Segmentation}
+    \item Table Alignment
+    \item Dump to CSV
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Visual: Table Segmentation}
+  \begin{figure}
+    \includegraphics[width=3.5cm, valign=c]{assets/mask1}
+    \includegraphics[width=3.5cm, valign=c]{assets/mask2}
+    \includegraphics[width=3.5cm, valign=c]{assets/mask3}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Visual: Tesseract OCR Output}
+  \begin{figure}
+    \includegraphics[height=7.5cm, valign=c]{assets/tesseract}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Column Segmentation}
+  \begin{itemize}
+    \item Naive approach is to merge words close together
+    \item But spacing is \textbf{variable} in tables
+    \item Text justification (left, center, right)
+    \item \textbf{Idea:} Use a Seq2Seq to learn correct segmentation
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Visual: Alignment}
+  \begin{figure}
+    \includegraphics[height=7.5cm, valign=c]{assets/result1}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Problem Statement: Column Segmentation}
+  \begin{figure}
+    \includegraphics[width=4.25cm, valign=c]{assets/table}
+    $\rightarrow$
+    \includegraphics[width=4.25cm, valign=c]{assets/csv}
+  \end{figure}
+  \begin{itemize}
+    \item Given a sequence of text, can we predict where to insert columns?
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Revisiting Column Segmentation as a Seq2Seq Problem}
+  \begin{itemize}
+    \item Translation Task
+    \item Given a sequence of tokens
+    \item Translate into the same set of tokens, but with a special \textcolor{WildStrawberry}{$\langle \texttt{SEG} \rangle$} token
+  \end{itemize}
+  \vspace{5mm}
+  \begin{equation*}
+    \centering
+    \textcolor{ForestGreen}{
+    \begin{array}{ccccccc}
+      \texttt{Less} & \texttt{imputed} & \texttt{interest} & {} & \texttt{(} & \texttt{174,862.64} & \texttt{)} \\
+      {} & {} & {} & \textcolor{BrickRed}{\big\Downarrow} & {} & {} & {} \\
+      \texttt{Less} & \texttt{imputed} & \texttt{interest} & \textcolor{WildStrawberry}{\langle\texttt{SEG}\rangle} & \texttt{(} & \texttt{174,862.64} & \texttt{)} \\
+    \end{array}}
+  \end{equation*}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Seq2Seq Architecture}
+  \begin{figure}
+    \centering
+    \includegraphics[width=10cm, valign=c]{assets/enc-dec}
+  \end{figure}
+  % add picture from notebook
+  \begin{itemize}
+    \item We can use a \textbf{Encoder-Decoder} style model!
+  \end{itemize}
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -161,6 +276,22 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Word Embeddings: Practical Considerations}
+
+\begin{frame}
+  \frametitle{Issue: Vocabulary Size}
+  \begin{itemize}
+    \item Is the text actually important?
+    \item Over 10K unique tokens, mostly numbers
+    \item \textbf{Solutions:}
+    \begin{itemize}
+      \item Token $\rightarrow$ Part-of-Speech
+      \item Numeric Value $\rightarrow$ \textcolor{Fuchsia}{$\langle \texttt{NUM} \rangle$}
+    \end{itemize}
+    \item Reduces vocabulary size to 21 tokens
+    \item But lets take a look at alternative solutions to managing vocab size
+  \end{itemize}
+  % picture of table
+\end{frame}
 
 \begin{frame}
   \frametitle{Recap: Word Embeddings}
@@ -412,176 +543,22 @@
 \end{equation*}
 \end{frame}
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Modeling Recurrent Relations}
+
+\section{Column Segmentation Architecture}
 
 \begin{frame}
-\frametitle{Vanilla RNNs}
-\begin{equation*}
-  h_t = \tanh \left( \overbrace{W_{ih} x_t + b_{ih}}^{input} + \underbrace{W_{hh} h_{t-1} + b_{hh}}_{hidden} \right)
-\end{equation*}
-\begin{itemize}
-  \item $h_t$ is the hidden state at time $t$
-  \item $x_t$ is the input at time $t$
-  \item $h_{t-1}$ is the previous hidden state
-  \item $h_0$ is initialized to $\mathbf{0}$
-
-\end{itemize}
-\end{frame}
-
-\begin{frame}
-\frametitle{Long Short Term Memory (LSTM)}
-\begin{equation*}
-  \begin{split}
-  \text{Gates} \rightarrow & \begin{cases}
-  \begin{array}{ll}
-              i_t = \sigma(W_{ii} x_t + b_{ii} + W_{hi} h_{t-1} + b_{hi}) \\
-              f_t = \sigma(W_{if} x_t + b_{if} + W_{hf} h_{t-1} + b_{hf}) \\
-              o_t = \sigma(W_{io} x_t + b_{io} + W_{ho} h_{t-1} + b_{ho}) \\
-              g_t = \tanh(W_{ig} x_t + b_{ig} + W_{hg} h_{t-1} + b_{hg}) \\
-  \end{array}
-  \end{cases} \\
-  \text{Outputs} \rightarrow & \begin{cases}
-  \begin{array}{ll}
-              c_t = f_t \odot c_{t-1} + i_t \odot g_t \\
-              h_t = o_t \odot \tanh(c_t) \\
-  \end{array}
-\end{cases}
-\end{split}
-\end{equation*}
-
-\begin{itemize}
-  \item $h_t$ is the hidden state at time $t$
-  \item $c_t$ is the cell state at time $t$
-  \item $x_t$ is the input at time $t$
-
-\end{itemize}
-\end{frame}
-
-\begin{frame}
-\frametitle{Gated Recurrent Units (GRU)}
-\begin{equation*}
-  \begin{split}
-  \text{Gates} \rightarrow & \begin{cases}
-  \begin{array}{ll}
-    r_t = \sigma(W_{ir} x_t + b_{ir} + W_{hr} h_{(t-1)} + b_{hr}) \\
-    z_t = \sigma(W_{iz} x_t + b_{iz} + W_{hz} h_{(t-1)} + b_{hz}) \\
-    n_t = \tanh(W_{in} x_t + b_{in} + r_t \odot (W_{hn} h_{(t-1)}+ b_{hn})) \\
-  \end{array}
-  \end{cases} \\
-  \text{Outputs} \rightarrow & \begin{cases}
-  \begin{array}{ll}
-            h_t = (1 - z_t) \odot n_t + z_t \odot h_{(t-1)}
-  \end{array}
-\end{cases}
-\end{split}
-\end{equation*}
-\begin{itemize}
-  \item $h_t$ is the hidden state at time $t$
-  \item $x_t$ is the input at time $t$
-\end{itemize}
-
-\end{frame}
-
-\begin{frame}
-\frametitle{Aside: Different Perspectives on Deep Recurrent Models}
-  % insert koehn deep model nn-lm slide 37
-  \begin{itemize}
-    \item So far we've only seen Left to Right Sequencing
-  \end{itemize}
+  \frametitle{Seq2Seq Architecture}
   \begin{figure}
     \centering
-    \includegraphics[width=10cm]{assets/L2R}
+    \includegraphics[width=10cm, valign=c]{assets/enc-dec}
   \end{figure}
-  \pause
-  \begin{itemize}
-    \item Why not Right to Left?
-  \end{itemize}
+  % add picture from notebook
   \begin{figure}
     \centering
-    \includegraphics[width=10cm]{assets/R2L}
+    \includegraphics[width=10cm, valign=c]{assets/col-seq2seq}
   \end{figure}
 \end{frame}
-
-
-\begin{frame}
-\frametitle{Aside: Different Perspectives on Deep Recurrent Models}
-\begin{figure}
-  \centering
-  \includegraphics[width=10cm]{assets/deep_models}
-\end{figure}
-\begin{itemize}
-  \item Experiment with different stacking techniques
-\end{itemize}
-\end{frame}
-
-\begin{frame}
-\frametitle{Alternating Recurrent Directions}
-\begin{figure}
-  \centering
-  \includegraphics[width=9cm]{assets/alternate_stacked}
-\end{figure}
-\end{frame}
-
-\begin{frame}
-\frametitle{Bidirectional Sequence Modeling}
-\begin{figure}
-  \centering
-  \includegraphics[width=10cm]{assets/bidirectional}
-\end{figure}
-\begin{itemize}
-  \item Can capture both left and right context
-  \item Implementation usually concatenates RNN states
-\end{itemize}
-\end{frame}
-
-
-
-\begin{frame}
-\frametitle{Aside: Dimensionality of Inputs and Outputs}
-
-\begin{center}
-\begin{tabular}{l|C{2.5cm}|C{2.5cm}|C{2.5cm}}
-\toprule
-\multicolumn{1}{c}{Type} &  \multicolumn{1}{c}{RNN} &  \multicolumn{1}{c}{LSTM} &  \multicolumn{1}{c}{GRU} \\
-\midrule
-In            & $B, L, H_{in}$              & $B, L, H_{in}$              & $B, L, H_{in}$ \\
-\midrule
-$h_{t-1}$ & $B, N_L \cdot N_D, H_{out}$ & $B, N_L \cdot N_D, H_{out}$ & $B, N_L \cdot N_D, H_{out}$ \\
-$c_{t-1}$   & - & $B, N_L \cdot N_D, H_{out}$      & - \\
-\midrule
-$h_t$   & $B, N_L \cdot N_D, H_{out}$ & $B, N_L \cdot N_D, H_{out}$ & $B, N_L \cdot N_D, H_{out}$ \\
-$c_t$     & - & $B, N_L \cdot N_D, H_{out}$ & - \\
-\midrule
-Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$ \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-\begin{itemize}
-  \item $B$ is the batch size
-  \item $L$ is the sequence length
-  \item $N_D$ is the number of directions
-  \item $N_L$ is the number of layers
-  \item $H_{in}, H_{out}$ are the input and hidden size
-\end{itemize}
-\end{frame}
-
-\begin{frame}
-\frametitle{Aside: The Influence of Padding in RNNs}
-\begin{itemize}
-  \item Assume the embedding $E\left[ \textcolor{WildStrawberry}{\langle \texttt{PAD} \rangle} \right] = \mathbf{0}$
-  \item Are we safe? \pause \textbf{NO!}
-  \item Because of the bias term, zero input does not result in a zero output
-  \begin{itemize}
-    \item This alters the hidden state being passed onto the next iteration
-  \end{itemize}
-  \item Don't even think about the mess bidirectionals become...
-  \item \textbf{Question:} Does this mean we learn the amount of padding for a given sequence?
-\end{itemize}
-\end{frame}
-
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -757,6 +734,69 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
 \end{equation*}
 \end{frame}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Initial Training Results}
+
+\begin{frame}
+  \frametitle{Recall: Seq2Seq Architecture}
+  \begin{figure}
+    \centering
+    \includegraphics[width=10cm, valign=c]{assets/enc-dec}
+  \end{figure}
+  % add picture from notebook
+  \begin{figure}
+    \centering
+    \includegraphics[width=10cm, valign=c]{assets/col-seq2seq}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Seq2Seq: Sample Results}
+  \begin{equation*}
+    \textcolor{ForestGreen}{
+    \begin{array}{cl}
+      \texttt{>} & \texttt{num num num punct} \\
+      \texttt{=} & \texttt{num \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} num \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} num \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} punct} \\
+      \texttt{<} & \texttt{num \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} num \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} num \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} punct} \\
+      \\
+      \texttt{>} & \texttt{adj num num num} \\
+      \texttt{=} & \texttt{adj \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} num \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} num \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} num} \\
+      \texttt{<} & \texttt{adj \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} num \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} num \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} num num num num num} \\
+      \\
+      \texttt{>} & \texttt{verb noun noun noun noun noun verb} \\
+      \texttt{=} & \texttt{verb \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} noun noun \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} noun noun noun \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} verb} \\
+      \texttt{<} & \texttt{verb noun \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} noun noun noun noun \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} noun } \cdots \\
+    \end{array}}
+  \end{equation*}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Thank You!}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Seq2Seq in Action: Advanced Techniques\\(Part 2)}
+
+\begin{frame}
+  \frametitle{Review}
+  \begin{itemize}
+    \item We have covered:
+    \begin{itemize}
+      \item What are Seq2Seq Models?
+      \item How can I reduce my vocabulary size?
+      \item How do I train a Seq2Seq model?
+    \end{itemize}
+    \item Part 2 wil explore more advanced concepts such as:
+    \begin{itemize}
+      \item Decoding with Beam Search
+      \item Modeling Recurrent Relations
+      \item Other applications of Sequence Modeling
+    \end{itemize}
+  \end{itemize}
+\end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Decoding: Making better Translations}
@@ -837,8 +877,701 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Modeling Recurrent Relations}
 
-\section{Applications}
+\begin{frame}
+\frametitle{Vanilla RNNs}
+\begin{equation*}
+  h_t = \tanh \left( \overbrace{W_{ih} x_t + b_{ih}}^{input} + \underbrace{W_{hh} h_{t-1} + b_{hh}}_{hidden} \right)
+\end{equation*}
+\begin{itemize}
+  \item $h_t$ is the hidden state at time $t$
+  \item $x_t$ is the input at time $t$
+  \item $h_{t-1}$ is the previous hidden state
+  \item $h_0$ is initialized to $\mathbf{0}$
+
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Long Short Term Memory (LSTM)}
+\begin{equation*}
+  \begin{split}
+  \text{Gates} \rightarrow & \begin{cases}
+  \begin{array}{ll}
+              i_t = \sigma(W_{ii} x_t + b_{ii} + W_{hi} h_{t-1} + b_{hi}) \\
+              f_t = \sigma(W_{if} x_t + b_{if} + W_{hf} h_{t-1} + b_{hf}) \\
+              o_t = \sigma(W_{io} x_t + b_{io} + W_{ho} h_{t-1} + b_{ho}) \\
+              g_t = \tanh(W_{ig} x_t + b_{ig} + W_{hg} h_{t-1} + b_{hg}) \\
+  \end{array}
+  \end{cases} \\
+  \text{Outputs} \rightarrow & \begin{cases}
+  \begin{array}{ll}
+              c_t = f_t \odot c_{t-1} + i_t \odot g_t \\
+              h_t = o_t \odot \tanh(c_t) \\
+  \end{array}
+\end{cases}
+\end{split}
+\end{equation*}
+
+\begin{itemize}
+  \item $h_t$ is the hidden state at time $t$
+  \item $c_t$ is the cell state at time $t$
+  \item $x_t$ is the input at time $t$
+
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Gated Recurrent Units (GRU)}
+\begin{equation*}
+  \begin{split}
+  \text{Gates} \rightarrow & \begin{cases}
+  \begin{array}{ll}
+    r_t = \sigma(W_{ir} x_t + b_{ir} + W_{hr} h_{(t-1)} + b_{hr}) \\
+    z_t = \sigma(W_{iz} x_t + b_{iz} + W_{hz} h_{(t-1)} + b_{hz}) \\
+    n_t = \tanh(W_{in} x_t + b_{in} + r_t \odot (W_{hn} h_{(t-1)}+ b_{hn})) \\
+  \end{array}
+  \end{cases} \\
+  \text{Outputs} \rightarrow & \begin{cases}
+  \begin{array}{ll}
+            h_t = (1 - z_t) \odot n_t + z_t \odot h_{(t-1)}
+  \end{array}
+\end{cases}
+\end{split}
+\end{equation*}
+\begin{itemize}
+  \item $h_t$ is the hidden state at time $t$
+  \item $x_t$ is the input at time $t$
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Aside: Different Perspectives on Deep Recurrent Models}
+  % insert koehn deep model nn-lm slide 37
+  \begin{itemize}
+    \item So far we've only seen Left to Right Sequencing
+  \end{itemize}
+  \begin{figure}
+    \centering
+    \includegraphics[width=10cm]{assets/L2R}
+  \end{figure}
+  \pause
+  \begin{itemize}
+    \item Why not Right to Left?
+  \end{itemize}
+  \begin{figure}
+    \centering
+    \includegraphics[width=10cm]{assets/R2L}
+  \end{figure}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Aside: Different Perspectives on Deep Recurrent Models}
+\begin{figure}
+  \centering
+  \includegraphics[width=10cm]{assets/deep_models}
+\end{figure}
+\begin{itemize}
+  \item Experiment with different stacking techniques
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Alternating Recurrent Directions}
+\begin{figure}
+  \centering
+  \includegraphics[width=9cm]{assets/alternate_stacked}
+\end{figure}
+\end{frame}
+
+\begin{frame}
+\frametitle{Bidirectional Sequence Modeling}
+\begin{figure}
+  \centering
+  \includegraphics[width=10cm]{assets/bidirectional}
+\end{figure}
+\begin{itemize}
+  \item Can capture both left and right context
+  \item Implementation usually concatenates RNN states
+\end{itemize}
+\end{frame}
+
+
+
+\begin{frame}
+\frametitle{Aside: Dimensionality of Inputs and Outputs (Batch First)}
+
+\begin{center}
+\begin{tabular}{l|C{2.5cm}|C{2.5cm}|C{2.5cm}}
+\toprule
+\multicolumn{1}{c}{Type} &  \multicolumn{1}{c}{RNN} &  \multicolumn{1}{c}{LSTM} &  \multicolumn{1}{c}{GRU} \\
+\midrule
+In            & $B, L, H_{in}$              & $B, L, H_{in}$              & $B, L, H_{in}$ \\
+\midrule
+$h_{t-1}$ & $N_L \cdot N_D, B, H_{out}$ & $N_L \cdot N_D, B, H_{out}$ & $N_L \cdot N_D, B, H_{out}$ \\
+$c_{t-1}$   & - & $N_L \cdot N_D, B, H_{out}$      & - \\
+\midrule
+$h_t$   & $N_L \cdot N_D, B, H_{out}$ & $N_L \cdot N_D, B, H_{out}$ & $N_L \cdot N_D, B, H_{out}$ \\
+$c_t$     & - & $N_L \cdot N_D, B, H_{out}$ & - \\
+\midrule
+Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{itemize}
+  \item $B$ is the batch size
+  \item $L$ is the sequence length
+  \item $N_D$ is the number of directions
+  \item $N_L$ is the number of layers
+  \item $H_{in}, H_{out}$ are the input and hidden size
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Aside: The Influence of Padding in RNNs}
+\begin{itemize}
+  \item Assume the embedding $E\left[ \textcolor{WildStrawberry}{\langle \texttt{PAD} \rangle} \right] = \mathbf{0}$
+  \item Are we safe? \pause \textbf{NO!}
+  \item Because of the bias term, zero input does not result in a zero output
+  \begin{itemize}
+    \item This alters the hidden state being passed onto the next iteration
+  \end{itemize}
+  \item Don't even think about the mess bidirectionals become...
+  \item \textbf{Question:} Does this mean we learn the amount of padding for a given sequence?
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Applications to Column Segmentation}
+
+\begin{frame}
+  \frametitle{Applications to Column Segmentation}
+  \begin{figure}
+    \centering
+    \includegraphics[width=10cm, valign=c]{assets/enc-dec}
+  \end{figure}
+  % add picture from notebook
+  \begin{figure}
+    \centering
+    \includegraphics[width=10cm, valign=c]{assets/col-seq2seq}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Column Segmentation: Throw away the decoder}
+  \begin{itemize}
+    \item Just use an encoder, with an output layer
+    \item For every token, predict if we should insert a $\textcolor{WildStrawberry}{\langle \texttt{SEG} \rangle}$
+    \item No longer have to learn the actual sequence
+  \end{itemize}
+  \begin{figure}
+    \centering
+    \includegraphics[width=10cm, valign=c]{assets/col-encoder}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Secondary Approach: Training Labels}
+  \begin{itemize}
+    \item Labels are now binary vectors, where $x_i = 1$ implies that there is a $\textcolor{WildStrawberry}{\langle \texttt{SEG} \rangle}$
+      between $x_i$ and $x_{i+1}$
+  \end{itemize}
+  \vspace{5mm}
+  \begin{equation*}
+    \centering
+    \textcolor{ForestGreen}{
+    \begin{array}{cccccccc}
+      \texttt{Less} & \texttt{imputed} & \texttt{interest} & {} & \texttt{(} & \texttt{174,862.64} & \texttt{)} \\
+      \textcolor{Fuchsia}{\texttt{0}} & \textcolor{Fuchsia}{\texttt{0}} & \textcolor{Fuchsia}{\texttt{\textbf{1}}} & {} & \textcolor{Fuchsia}{\texttt{0}} & \textcolor{Fuchsia}{\texttt{0}} & \textcolor{Fuchsia}{\texttt{0}} \\
+      \texttt{Less} & \texttt{imputed} & \texttt{interest} & \textcolor{WildStrawberry}{\langle \texttt{SEG} \rangle} & \texttt{(} & \texttt{174,862.64} & \texttt{)} \\
+    \end{array}}
+  \end{equation*}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Independent Row Training Visual}
+  \begin{figure}
+    \centering
+    \begin{tikzpicture}[shorten >=1pt,node distance=1cm,on grid,auto, every node/.style={scale=0.75},
+      el/.style={inner sep=2pt, align=left, sloped}]
+
+      \node[] (r0) {$\begin{matrix} r_{00} & \cdots & r_{0j} & \cdots & r_{0m} \end{matrix}$};
+      \node[] (for0) [below=of r0, yshift=-0.7cm, xshift=0.75cm] {$\texttt{Forward}$};
+      \node[] (rev0) [below=of r0, yshift=-1.55cm, xshift=-0.75cm] {$\texttt{Reverse}$};
+
+      \node[] (rnn1) [right=of r0, xshift=1cm, yshift=-3.5cm] {$\cdots$};
+
+      \node[] (r1) [right=of r0, xshift=3.5cm] {$\begin{matrix} r_{i0} & \cdots & r_{ij} & \cdots & r_{im} \end{matrix}$};
+      \node[] (for1) [below=of r1, yshift=-0.7cm, xshift=0.75cm] {$\texttt{Forward}$};
+      \node[] (rev1) [below=of r1, yshift=-1.55cm, xshift=-0.75cm] {$\texttt{Reverse}$};
+
+      \node[] (rnn2) [right=of r1, xshift=1cm, yshift=-3.5cm] {$\cdots$};
+
+      \node[] (rn) [right=of r1, xshift=3.5cm] {$\begin{matrix} r_{n0} & \cdots & r_{nj} & \cdots & r_{nm} \end{matrix}$};
+      \node[] (forn) [below=of rn, yshift=-0.7cm, xshift=0.75cm] {$\texttt{Forward}$};
+      \node[] (revn) [below=of rn, yshift=-1.55cm, xshift=-0.75cm] {$\texttt{Reverse}$};
+
+      \node[] (linear0) [below=of r0, yshift=-3.5cm] {$\texttt{Linear}$};
+      \node[] (linear1) [below=of r1, yshift=-3.5cm] {$\texttt{Linear}$};
+      \node[] (linearn) [below=of rn, yshift=-3.5cm] {$\texttt{Linear}$};
+
+      \node[] (out0) [below=of linear0, yshift=-0.5cm] {$\begin{bmatrix} 0 & 0 & \cdots & 0 \end{bmatrix}$};
+      \node[] (out1) [below=of linear1, yshift=-0.5cm] {$\begin{bmatrix} 0 & 1 & \cdots & 1 \end{bmatrix}$};
+      \node[] (outn) [below=of linearn, yshift=-0.5cm] {$\begin{bmatrix} 0 & 1 & \cdots & 0 \end{bmatrix}$};
+
+      \path[->]
+        (r0) edge [bend left=10] node[] {} (for0)
+        (r0) edge [bend right=10] node[] {} (rev0)
+        (for0) edge [bend left=10] node[] {} (linear0)
+        (rev0) edge [bend right=10] node[] {} (linear0)
+        (linear0) edge [] node[] {} (out0)
+
+        (r1) edge [bend left=10] node[] {} (for1)
+        (r1) edge [bend right=10] node[] {} (rev1)
+        (for1) edge [bend left=10] node[] {} (linear1)
+        (rev1) edge [bend right=10] node[] {} (linear1)
+        (linear1) edge [] node[] {} (out1)
+
+        (rn) edge [bend left=10] node[] {} (forn)
+        (rn) edge [bend right=10] node[] {} (revn)
+        (forn) edge [bend left=10] node[] {} (linearn)
+        (revn) edge [bend right=10] node[] {} (linearn)
+        (linearn) edge [] node[] {} (outn);
+
+
+
+    \end{tikzpicture}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Secondary Approach: Sample Results}
+  \begin{figure}
+    \centering
+    \includegraphics[height=3.75cm, valign=c]{assets/cm}
+    \includegraphics[height=3.75cm, valign=c]{assets/cm_norm}
+  \end{figure}
+  \begin{center}
+    \begin{tabular}{rcccr}
+    \toprule
+    {} &  Precision &  Recall &  F1-Score & Support \\
+    \midrule
+    Label: 0 & $0.99$ & $0.92$ & $0.96$ & $168,275$ \\
+    Label: 1 & $0.67$ & $0.97$ & $0.80$ & $28,685$ \\
+    \midrule
+    accuracy & {} & {} & $0.93$ & $196,960$ \\
+    macro avg & $0.83$ & $0.95$ & $0.88$ & $196,960$ \\
+    weighted avg & $0.95$ & $0.93$ & $0.93$ & $196,960$ \\
+    \bottomrule
+    \end{tabular}
+  \end{center}
+  % something
+  % metrics
+  % graphs
+\end{frame}
+
+\begin{frame}
+  \frametitle{How can we improve on this?}
+  \begin{figure}
+    \centering
+    \begin{tikzpicture}[shorten >=1pt,node distance=1cm,on grid,auto, every node/.style={scale=0.75},
+      el/.style={inner sep=2pt, align=left, sloped}]
+
+      \node[] (r0) {$\begin{matrix} r_{00} & \cdots & r_{0j} & \cdots & r_{0m} \end{matrix}$};
+      \node[] (for0) [below=of r0, yshift=-0.7cm, xshift=0.75cm] {$\texttt{Forward}$};
+      \node[] (rev0) [below=of r0, yshift=-1.55cm, xshift=-0.75cm] {$\texttt{Reverse}$};
+
+      \node[] (rnn1) [right=of r0, xshift=1cm, yshift=-3.5cm] {$\cdots$};
+
+      \node[] (r1) [right=of r0, xshift=3.5cm] {$\begin{matrix} r_{i0} & \cdots & r_{ij} & \cdots & r_{im} \end{matrix}$};
+      \node[] (for1) [below=of r1, yshift=-0.7cm, xshift=0.75cm] {$\texttt{Forward}$};
+      \node[] (rev1) [below=of r1, yshift=-1.55cm, xshift=-0.75cm] {$\texttt{Reverse}$};
+
+      \node[] (rnn2) [right=of r1, xshift=1cm, yshift=-3.5cm] {$\cdots$};
+
+      \node[] (rn) [right=of r1, xshift=3.5cm] {$\begin{matrix} r_{n0} & \cdots & r_{nj} & \cdots & r_{nm} \end{matrix}$};
+      \node[] (forn) [below=of rn, yshift=-0.7cm, xshift=0.75cm] {$\texttt{Forward}$};
+      \node[] (revn) [below=of rn, yshift=-1.55cm, xshift=-0.75cm] {$\texttt{Reverse}$};
+
+      \node[] (linear0) [below=of r0, yshift=-3.5cm] {$\texttt{Linear}$};
+      \node[] (linear1) [below=of r1, yshift=-3.5cm] {$\texttt{Linear}$};
+      \node[] (linearn) [below=of rn, yshift=-3.5cm] {$\texttt{Linear}$};
+
+      \node[] (out0) [below=of linear0, yshift=-0.5cm] {$\begin{bmatrix} 0 & 0 & \cdots & 0 \end{bmatrix}$};
+      \node[] (out1) [below=of linear1, yshift=-0.5cm] {$\begin{bmatrix} 0 & 1 & \cdots & 1 \end{bmatrix}$};
+      \node[] (outn) [below=of linearn, yshift=-0.5cm] {$\begin{bmatrix} 0 & 1 & \cdots & 0 \end{bmatrix}$};
+
+      \path[->]
+        (r0) edge [bend left=10] node[] {} (for0)
+        (r0) edge [bend right=10] node[] {} (rev0)
+        (for0) edge [bend left=10] node[] {} (linear0)
+        (rev0) edge [bend right=10] node[] {} (linear0)
+        (linear0) edge [] node[] {} (out0)
+
+        (r1) edge [bend left=10] node[] {} (for1)
+        (r1) edge [bend right=10] node[] {} (rev1)
+        (for1) edge [bend left=10] node[] {} (linear1)
+        (rev1) edge [bend right=10] node[] {} (linear1)
+        (linear1) edge [] node[] {} (out1)
+
+        (rn) edge [bend left=10] node[] {} (forn)
+        (rn) edge [bend right=10] node[] {} (revn)
+        (forn) edge [bend left=10] node[] {} (linearn)
+        (revn) edge [bend right=10] node[] {} (linearn)
+        (linearn) edge [] node[] {} (outn);
+
+    \end{tikzpicture}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Joint Training on a Table}
+  \begin{itemize}
+    \item We saw that we could regenerate a sequence from its hidden state alone.
+    \item Why not use this information to link rows within the same table?
+    \begin{itemize}
+      \item Bidirectional for each row
+      \item Propagate hidden state to next row
+      \item Linear layers for prediction
+    \end{itemize}
+  \end{itemize}
+  \begin{figure}
+    \centering
+    \includegraphics[width=10cm, valign=c]{assets/table_model}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Joint Table Training Visual}
+  \begin{figure}
+    \centering
+    \begin{tikzpicture}[shorten >=1pt,node distance=1cm,on grid,auto, every node/.style={scale=0.75},
+      el/.style={inner sep=2pt, align=left, sloped}]
+
+      \node[] (r0) {$\begin{matrix} r_{00} & \cdots & r_{0j} & \cdots & r_{0m} \end{matrix}$};
+      \node[] (for0) [below=of r0, yshift=-0.7cm, xshift=0.75cm] {$\texttt{Forward}$};
+      \node[] (rev0) [below=of r0, yshift=-1.55cm, xshift=-0.75cm] {$\texttt{Reverse}$};
+
+      \node[] (rnn1) [right=of r0, xshift=1cm, yshift=-3.5cm] {$\cdots$};
+
+      \node[] (r1) [right=of r0, xshift=3.5cm] {$\begin{matrix} r_{i0} & \cdots & r_{ij} & \cdots & r_{im} \end{matrix}$};
+      \node[] (for1) [below=of r1, yshift=-0.7cm, xshift=0.75cm] {$\texttt{Forward}$};
+      \node[] (rev1) [below=of r1, yshift=-1.55cm, xshift=-0.75cm] {$\texttt{Reverse}$};
+
+      \node[] (rnn2) [right=of r1, xshift=1cm, yshift=-3.5cm] {$\cdots$};
+
+      \node[] (rn) [right=of r1, xshift=3.5cm] {$\begin{matrix} r_{n0} & \cdots & r_{nj} & \cdots & r_{nm} \end{matrix}$};
+      \node[] (forn) [below=of rn, yshift=-0.7cm, xshift=0.75cm] {$\texttt{Forward}$};
+      \node[] (revn) [below=of rn, yshift=-1.55cm, xshift=-0.75cm] {$\texttt{Reverse}$};
+
+      \node[] (linear0) [below=of r0, yshift=-3.5cm] {$\texttt{Linear}$};
+      \node[] (linear1) [below=of r1, yshift=-3.5cm] {$\texttt{Linear}$};
+      \node[] (linearn) [below=of rn, yshift=-3.5cm] {$\texttt{Linear}$};
+
+      \node[] (out0) [below=of linear0, yshift=-0.5cm] {$\begin{bmatrix} 0 & 0 & \cdots & 0 \end{bmatrix}$};
+      \node[] (out1) [below=of linear1, yshift=-0.5cm] {$\begin{bmatrix} 0 & 1 & \cdots & 1 \end{bmatrix}$};
+      \node[] (outn) [below=of linearn, yshift=-0.5cm] {$\begin{bmatrix} 0 & 1 & \cdots & 0 \end{bmatrix}$};
+
+
+      \path[->]
+        (r0) edge [bend left=10] node[] {} (for0)
+        (r0) edge [bend right=10] node[] {} (rev0)
+        (for0) edge [bend left=10] node[] {} (linear0)
+        (rev0) edge [bend right=10] node[] {} (linear0)
+        (linear0) edge [] node[] {} (out0)
+
+        (r1) edge [bend left=10] node[] {} (for1)
+        (r1) edge [bend right=10] node[] {} (rev1)
+        (for1) edge [bend left=10] node[] {} (linear1)
+        (rev1) edge [bend right=10] node[] {} (linear1)
+        (linear1) edge [] node[] {} (out1)
+
+        (rn) edge [bend left=10] node[] {} (forn)
+        (rn) edge [bend right=10] node[] {} (revn)
+        (forn) edge [bend left=10] node[] {} (linearn)
+        (revn) edge [bend right=10] node[] {} (linearn)
+        (linearn) edge [] node[] {} (outn)
+
+        (for0) edge [] node[] {} (for1)
+        (rev0) edge [] node[] {} (rev1)
+        (for1) edge [] node[] {} (forn)
+        (rev1) edge [] node[] {} (revn)
+        ;
+
+
+    \end{tikzpicture}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Joint Table Training: Sample Results}
+  \begin{figure}
+    \centering
+    \includegraphics[height=3.75cm, valign=c]{assets/cm_table}
+    \includegraphics[height=3.75cm, valign=c]{assets/cm_table_norm}
+  \end{figure}
+  \begin{center}
+    \begin{tabular}{rcccr}
+    \toprule
+    {} &  Precision &  Recall &  F1-Score & Support \\
+    \midrule
+    Label: 0 & $1.00$ & $0.96$ & $0.98$ & $168,275$ \\
+    Label: 1 & $0.83$ & $0.98$ & $0.90$ & $28,685$ \\
+    \midrule
+    accuracy & {} & {} & $0.97$ & $196,960$ \\
+    macro avg & $0.91$ & $0.97$ & $0.94$ & $196,960$ \\
+    weighted avg & $0.97$ & $0.97$ & $0.97$ & $196,960$ \\
+    \bottomrule
+    \end{tabular}
+  \end{center}
+  % something
+  % metrics
+  % graphs
+\end{frame}
+
+\begin{frame}
+  \frametitle{Is this a correct way to link rows?}
+  \begin{figure}
+    \centering
+    \begin{tikzpicture}[shorten >=1pt,node distance=1cm,on grid,auto, every node/.style={scale=0.75},
+      el/.style={inner sep=2pt, align=left, sloped}]
+
+      \node[] (r0) {$\begin{matrix} r_{00} & \cdots & r_{0j} & \cdots & r_{0m} \end{matrix}$};
+      \node[] (for0) [below=of r0, yshift=-0.7cm, xshift=0.75cm] {$\texttt{Forward}$};
+      \node[] (rev0) [below=of r0, yshift=-1.55cm, xshift=-0.75cm] {$\texttt{Reverse}$};
+
+      \node[] (rnn1) [right=of r0, xshift=1cm, yshift=-3.5cm] {$\cdots$};
+
+      \node[] (r1) [right=of r0, xshift=3.5cm] {$\begin{matrix} r_{i0} & \cdots & r_{ij} & \cdots & r_{im} \end{matrix}$};
+      \node[] (for1) [below=of r1, yshift=-0.7cm, xshift=0.75cm] {$\texttt{Forward}$};
+      \node[] (rev1) [below=of r1, yshift=-1.55cm, xshift=-0.75cm] {$\texttt{Reverse}$};
+
+      \node[] (rnn2) [right=of r1, xshift=1cm, yshift=-3.5cm] {$\cdots$};
+
+      \node[] (rn) [right=of r1, xshift=3.5cm] {$\begin{matrix} r_{n0} & \cdots & r_{nj} & \cdots & r_{nm} \end{matrix}$};
+      \node[] (forn) [below=of rn, yshift=-0.7cm, xshift=0.75cm] {$\texttt{Forward}$};
+      \node[] (revn) [below=of rn, yshift=-1.55cm, xshift=-0.75cm] {$\texttt{Reverse}$};
+
+      \node[] (linear0) [below=of r0, yshift=-3.5cm] {$\texttt{Linear}$};
+      \node[] (linear1) [below=of r1, yshift=-3.5cm] {$\texttt{Linear}$};
+      \node[] (linearn) [below=of rn, yshift=-3.5cm] {$\texttt{Linear}$};
+
+      \node[] (out0) [below=of linear0, yshift=-0.5cm] {$\begin{bmatrix} 0 & 0 & \cdots & 0 \end{bmatrix}$};
+      \node[] (out1) [below=of linear1, yshift=-0.5cm] {$\begin{bmatrix} 0 & 1 & \cdots & 1 \end{bmatrix}$};
+      \node[] (outn) [below=of linearn, yshift=-0.5cm] {$\begin{bmatrix} 0 & 1 & \cdots & 0 \end{bmatrix}$};
+
+
+      \path[->]
+        (r0) edge [bend left=10] node[] {} (for0)
+        (r0) edge [bend right=10] node[] {} (rev0)
+        (for0) edge [bend left=10] node[] {} (linear0)
+        (rev0) edge [bend right=10] node[] {} (linear0)
+        (linear0) edge [] node[] {} (out0)
+
+        (r1) edge [bend left=10] node[] {} (for1)
+        (r1) edge [bend right=10] node[] {} (rev1)
+        (for1) edge [bend left=10] node[] {} (linear1)
+        (rev1) edge [bend right=10] node[] {} (linear1)
+        (linear1) edge [] node[] {} (out1)
+
+        (rn) edge [bend left=10] node[] {} (forn)
+        (rn) edge [bend right=10] node[] {} (revn)
+        (forn) edge [bend left=10] node[] {} (linearn)
+        (revn) edge [bend right=10] node[] {} (linearn)
+        (linearn) edge [] node[] {} (outn)
+
+        (for0) edge [] node[] {} (for1)
+        (rev0) edge [] node[] {} (rev1)
+        (for1) edge [] node[] {} (forn)
+        (rev1) edge [] node[] {} (revn)
+        ;
+
+
+    \end{tikzpicture}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Joint Table Training with Swapping Visual}
+  \begin{figure}
+    \centering
+    \begin{tikzpicture}[shorten >=1pt,node distance=1cm,on grid,auto, every node/.style={scale=0.75},
+      el/.style={inner sep=2pt, align=left, sloped}]
+
+      \node[] (r0) {$\begin{matrix} r_{00} & \cdots & r_{0j} & \cdots & r_{0m} \end{matrix}$};
+      \node[] (for0) [below=of r0, yshift=-0.7cm, xshift=0.75cm] {$\texttt{Forward}$};
+      \node[] (rev0) [below=of r0, yshift=-1.55cm, xshift=-0.75cm] {$\texttt{Reverse}$};
+
+      \node[] (rnn1) [right=of r0, xshift=1cm, yshift=-3.5cm] {$\cdots$};
+
+      \node[] (r1) [right=of r0, xshift=3.5cm] {$\begin{matrix} r_{i0} & \cdots & r_{ij} & \cdots & r_{im} \end{matrix}$};
+      \node[] (for1) [below=of r1, yshift=-0.7cm, xshift=0.75cm] {$\texttt{Forward}$};
+      \node[] (rev1) [below=of r1, yshift=-1.55cm, xshift=-0.75cm] {$\texttt{Reverse}$};
+
+      \node[] (rnn2) [right=of r1, xshift=1cm, yshift=-3.5cm] {$\cdots$};
+
+      \node[] (rn) [right=of r1, xshift=3.5cm] {$\begin{matrix} r_{n0} & \cdots & r_{nj} & \cdots & r_{nm} \end{matrix}$};
+      \node[] (forn) [below=of rn, yshift=-0.7cm, xshift=0.75cm] {$\texttt{Forward}$};
+      \node[] (revn) [below=of rn, yshift=-1.55cm, xshift=-0.75cm] {$\texttt{Reverse}$};
+
+      \node[] (linear0) [below=of r0, yshift=-3.5cm] {$\texttt{Linear}$};
+      \node[] (linear1) [below=of r1, yshift=-3.5cm] {$\texttt{Linear}$};
+      \node[] (linearn) [below=of rn, yshift=-3.5cm] {$\texttt{Linear}$};
+
+      \node[] (out0) [below=of linear0, yshift=-0.5cm] {$\begin{bmatrix} 0 & 0 & \cdots & 0 \end{bmatrix}$};
+      \node[] (out1) [below=of linear1, yshift=-0.5cm] {$\begin{bmatrix} 0 & 1 & \cdots & 1 \end{bmatrix}$};
+      \node[] (outn) [below=of linearn, yshift=-0.5cm] {$\begin{bmatrix} 0 & 1 & \cdots & 0 \end{bmatrix}$};
+
+
+      \path[->]
+        (r0) edge [bend left=10] node[] {} (for0)
+        (r0) edge [bend right=10] node[] {} (rev0)
+        (for0) edge [bend left=10] node[] {} (linear0)
+        (rev0) edge [bend right=10] node[] {} (linear0)
+        (linear0) edge [] node[] {} (out0)
+
+        (r1) edge [bend left=10] node[] {} (for1)
+        (r1) edge [bend right=10] node[] {} (rev1)
+        (for1) edge [bend left=10] node[] {} (linear1)
+        (rev1) edge [bend right=10] node[] {} (linear1)
+        (linear1) edge [] node[] {} (out1)
+
+        (rn) edge [bend left=10] node[] {} (forn)
+        (rn) edge [bend right=10] node[] {} (revn)
+        (forn) edge [bend left=10] node[] {} (linearn)
+        (revn) edge [bend right=10] node[] {} (linearn)
+        (linearn) edge [] node[] {} (outn)
+
+        (for0) edge [bend right=5] node[] {} (rev1)
+        (rev0) edge [bend left=5] node[] {} (for1)
+        (for1) edge [bend left=5] node[] {} (revn)
+        (rev1) edge [bend left=5] node[] {} (forn)
+        ;
+
+
+    \end{tikzpicture}
+  \end{figure}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Trick for Swapping in Joint Table Training}
+  \begin{itemize}
+    \item Note that the hidden state is biased towards the items closest to it
+    \item So the beginning of a new row has context from the end of the last row
+    \begin{itemize}
+      \item Is this a good choice?
+      \item What if we flip the bidirectional hidden states every iteration
+      \item AKA the beginning of a new row has the hidden state info from the beginning of the last row
+      \item And vice-versa
+    \end{itemize}
+  \end{itemize}
+  \begin{figure}
+    \centering
+    \includegraphics[width=10cm, valign=c]{assets/table_model_swap}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Joint Table Training with Swapping: Sample Results}
+  \begin{figure}
+    \centering
+    \includegraphics[height=3.75cm, valign=c]{assets/cm_table_swap}
+    \includegraphics[height=3.75cm, valign=c]{assets/cm_table_swap_norm}
+  \end{figure}
+  \begin{center}
+    \begin{tabular}{rcccr}
+    \toprule
+    {} &  Precision &  Recall &  F1-Score & Support \\
+    \midrule
+    Label: 0 & $1.00$ & $0.97$ & $0.98$ & $168,275$ \\
+    Label: 1 & $0.83$ & $0.98$ & $0.90$ & $28,685$ \\
+    \midrule
+    accuracy & {} & {} & $0.97$ & $196,960$ \\
+    macro avg & $0.92$ & $0.97$ & $0.94$ & $196,960$ \\
+    weighted avg & $0.97$ & $0.97$ & $0.97$ & $196,960$ \\
+    \bottomrule
+    \end{tabular}
+  \end{center}
+  % something
+  % metrics
+  % graphs
+\end{frame}
+
+\begin{frame}
+  \frametitle{Summary of Methods}
+  \begin{center}
+    \footnotesize
+    % \begin{tabular}{rccc|ccc|c}
+    % \toprule
+    % {} & \multicolumn{3}{c}{Label 0} & \multicolumn{3}{c}{Label 1} & {} \\
+    % \cmidrule(lr){1-4}  \cmidrule(lr){5-7}
+    % {} &  Precision &  Recall &  F1-Score & Precision &  Recall &  F1-Score & Accuracy \\
+    % \midrule
+    % Independent   & $0.99$ & $0.92$ & $0.96$ & $0.67$ & $0.97$ & $0.80$ & $0.93$ \\
+    % Joint Table   & $1.00$ & $0.96$ & $0.98$ & $0.83$ & $0.98$ & $0.90$ & $0.97$ \\
+    % Joint Swapped & $1.00$ & $0.97$ & $0.98$ & $0.83$ & $0.98$ & $0.90$ & $0.97$ \\
+    % \bottomrule
+    % \end{tabular}
+
+    \begin{tabular}{rlccc}
+    \toprule
+    {} & {} & Independent & Joint & Joint Swapped \\
+    \midrule
+    \multirow{3}{*}{Label: 0} & Precision & $0.99$ & $\mathbf{1.00}$ & $\mathbf{1.00}$ \\
+    {}                        & Recall    & $0.92$ & $0.96$ & $\mathbf{0.97}$ \\
+    {}                        & F1-Score  & $0.96$ & $\mathbf{0.98}$ & $\mathbf{0.98}$ \\
+    \midrule
+    \multirow{3}{*}{Label: 1} & Precision & $0.67$ & $\mathbf{0.83}$ & $\mathbf{0.83}$ \\
+    {}                        & Recall    & $0.97$ & $\mathbf{0.98}$ & $\mathbf{0.98}$ \\
+    {}                        & F1-Score  & $0.80$ & $\mathbf{0.90}$ & $\mathbf{0.90}$ \\
+    \midrule
+    {}                        & Accuracy  & $0.93$ & $\mathbf{0.97}$ & $\mathbf{0.97}$ \\
+    \bottomrule
+    \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{What have we learned?}
+  \begin{itemize}
+    \item We can learn text segments purely from the sequence of Part-of-Speech tags
+    \item It is useful to jointly train/predict on the table instead of assuming independence
+    \item No significant difference between regular and swapped hidden state propagation
+    \item \textbf{Note:}
+    \begin{itemize}
+      \item We use the concept of \textit{deep transition} in Seq2Seq for joint training
+      \item Where our training is dependent on the hidden state encoding useful information
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Future Plans}
+  \begin{itemize}
+    \item Features
+    \begin{itemize}
+      \item Use word location information
+      \item Tesseract gives bounding boxes
+    \end{itemize}
+    \item Encoder Structure
+    \begin{itemize}
+      \item Convolution
+      \item Transformer
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Other Applications For Sequence Modeling}
 
 \begin{frame}
 \frametitle{Recall: Encoders, Decoders, and Seq2Seq Models}
@@ -874,172 +1607,6 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
       \end{itemize}
   \end{itemize}
 \end{frame}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\section{Bill's Application: Column Segmention}
-
-\begin{frame}
-  \frametitle{Problem Statement: Column Segmentation}
-  \begin{figure}
-    \includegraphics[width=4.25cm, valign=c]{assets/table}
-    $\rightarrow$
-    \includegraphics[width=4.25cm, valign=c]{assets/csv}
-  \end{figure}
-  \begin{itemize}
-    \item Given a sequence of text, can we predict where to insert columns?
-  \end{itemize}
-  % picture of table
-\end{frame}
-
-\begin{frame}
-  \frametitle{Issue: Vocabulary Size}
-  \begin{itemize}
-    \item Is the text actually important?
-    \item Over 10K unique tokens, mostly numbers
-    \item \textbf{Solutions:}
-    \begin{itemize}
-      \item Token $\rightarrow$ Part-of-Speech
-      \item Numeric Value $\rightarrow$ \textcolor{Fuchsia}{$\langle \texttt{NUM} \rangle$}
-    \end{itemize}
-    \item Reduces vocabulary size to 21 tokens
-  \end{itemize}
-  % picture of table
-\end{frame}
-
-\begin{frame}
-  \frametitle{Regular Seq2Seq}
-  \begin{itemize}
-    \item Translation Task
-    \item Given a sequence of tokens
-    \item Translate into the same set of tokens, but with a special \textcolor{WildStrawberry}{$\langle \texttt{SEG} \rangle$} token
-  \end{itemize}
-  \vspace{5mm}
-  \begin{equation*}
-    \centering
-    \textcolor{ForestGreen}{
-    \begin{array}{ccccccc}
-      \texttt{Less} & \texttt{imputed} & \texttt{interest} & {} & \texttt{(} & \texttt{174,862.64} & \texttt{)} \\
-      {} & {} & {} & \textcolor{BrickRed}{\big\Downarrow} & {} & {} & {} \\
-      \texttt{Less} & \texttt{imputed} & \texttt{interest} & \textcolor{WildStrawberry}{\langle\texttt{SEG}\rangle} & \texttt{(} & \texttt{174,862.64} & \texttt{)} \\
-    \end{array}}
-  \end{equation*}
-\end{frame}
-
-\begin{frame}
-  \frametitle{Seq2Seq Architecture}
-  \begin{figure}
-    \centering
-    \includegraphics[width=10cm, valign=c]{assets/enc-dec}
-  \end{figure}
-  % add picture from notebook
-  \begin{figure}
-    \centering
-    \includegraphics[width=10cm, valign=c]{assets/col-seq2seq}
-  \end{figure}
-\end{frame}
-
-\begin{frame}
-  \frametitle{Seq2Seq: Sample Results}
-  \begin{equation*}
-    \textcolor{ForestGreen}{
-    \begin{array}{cl}
-      \texttt{>} & \texttt{num num num punct} \\
-      \texttt{=} & \texttt{num \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} num \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} num \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} punct} \\
-      \texttt{<} & \texttt{num \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} num \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} num \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} punct} \\
-      \\
-      \texttt{>} & \texttt{adj num num num} \\
-      \texttt{=} & \texttt{adj \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} num \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} num \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} num} \\
-      \texttt{<} & \texttt{adj \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} num \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} num \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} num num num num num} \\
-      \\
-      \texttt{>} & \texttt{verb noun noun noun noun noun verb} \\
-      \texttt{=} & \texttt{verb \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} noun noun \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} noun noun noun \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} verb} \\
-      \texttt{<} & \texttt{verb noun \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} noun noun noun noun \textcolor{WildStrawberry}{$\langle$SEG$\rangle$} noun } \cdots \\
-    \end{array}}
-  \end{equation*}
-  % something
-  % metrics
-  % graphs
-\end{frame}
-
-\begin{frame}
-  \frametitle{Secondary Approach: Throw away the decoder}
-  \begin{itemize}
-    \item Just use an encoder, with an output layer
-    \item For every token, predict if we should insert a $\textcolor{WildStrawberry}{\langle \texttt{SEG} \rangle}$
-    \item No longer have to learn the actual sequence
-  \end{itemize}
-  \begin{figure}
-    \centering
-    \includegraphics[width=10cm, valign=c]{assets/col-encoder}
-  \end{figure}
-\end{frame}
-
-\begin{frame}
-  \frametitle{Secondary Approach: Training Labels}
-  \begin{itemize}
-    \item Labels are now binary vectors, where $x_i = 1$ implies that there is a $\textcolor{WildStrawberry}{\langle \texttt{SEG} \rangle}$
-      between $x_i$ and $x_{i+1}$
-  \end{itemize}
-  \vspace{5mm}
-  \begin{equation*}
-    \centering
-    \textcolor{ForestGreen}{
-    \begin{array}{cccccccc}
-      \texttt{Less} & \texttt{imputed} & \texttt{interest} & {} & \texttt{(} & \texttt{174,862.64} & \texttt{)} \\
-      \textcolor{Fuchsia}{\texttt{0}} & \textcolor{Fuchsia}{\texttt{0}} & \textcolor{Fuchsia}{\texttt{\textbf{1}}} & {} & \textcolor{Fuchsia}{\texttt{0}} & \textcolor{Fuchsia}{\texttt{0}} & \textcolor{Fuchsia}{\texttt{0}} \\
-      \texttt{Less} & \texttt{imputed} & \texttt{interest} & \textcolor{WildStrawberry}{\langle \texttt{SEG} \rangle} & \texttt{(} & \texttt{174,862.64} & \texttt{)} \\
-    \end{array}}
-  \end{equation*}
-\end{frame}
-
-\begin{frame}
-  \frametitle{Secondary Approach: Sample Results}
-  \begin{figure}
-    \centering
-    \includegraphics[height=3.75cm, valign=c]{assets/cm}
-    \includegraphics[height=3.75cm, valign=c]{assets/cm_norm}
-  \end{figure}
-  \begin{center}
-    \begin{tabular}{rcccr}
-    \toprule
-    {} &  Precision &  Recall &  F1-Score & Support \\
-    \midrule
-    Label: 0 & $1.00$ & $0.94$ & $0.97$ & $168,275$ \\
-    Label: 1 & $0.74$ & $0.98$ & $0.85$ & $28,685$ \\
-    \midrule
-    accuracy & {} & {} & $0.95$ & $196,960$ \\
-    macro avg & $0.87$ & $0.96$ & $0.91$ & $196,960$ \\
-    weighted avg & $0.96$ & $0.95$ & $0.95$ & $196,960$ \\
-    \bottomrule
-    \end{tabular}
-  \end{center}
-  % something
-  % metrics
-  % graphs
-\end{frame}
-
-\begin{frame}
-  \frametitle{Future Plans}
-  \begin{itemize}
-    \item Features
-    \begin{itemize}
-      \item Use segment location information
-      \item Tesseract gives bounding box information
-    \end{itemize}
-    \item Encoder Structure
-    \begin{itemize}
-      \item Convolution
-      \item Transformer
-    \end{itemize}
-    \item Ensembling
-    \begin{itemize}
-      \item Treat rows as independent, then aggregate predicted column segments
-      \item Jointly train on all sequences in a table, mixing the individual rows
-    \end{itemize}
-  \end{itemize}
-\end{frame}
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
