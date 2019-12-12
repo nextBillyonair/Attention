@@ -42,10 +42,10 @@
 % \usetheme{Boadilla}
 
 \title{Seq2Seq in Action: Column Segmentation}
-% \subtitle{Using Beamer}
+\subtitle{Part 1}
 \author{Bill Watson}
 \institute{S\&P Global}
-\date{\today}
+\date{January 16, 2020}
 
 \newenvironment{nospaceflalign*}
  {\setlength{\abovedisplayskip}{0pt}\setlength{\belowdisplayskip}{0pt}%
@@ -150,8 +150,12 @@
   \frametitle{Column Segmentation}
   \begin{itemize}
     \item Naive approach is to merge words close together
-    \item But spacing is \textbf{variable} in tables
-    \item Text justification (left, center, right)
+    \begin{itemize}
+      \item But spacing is \textbf{variable} in tables
+      \item Text justification (left, center, right)
+    \end{itemize}
+    \item \textbf{Union Find} to group columns by \textbf{Intersection Over Union (IOU)}
+    \pause
     \item \textbf{Idea:} Use a Seq2Seq to learn correct segmentation
   \end{itemize}
 \end{frame}
@@ -167,7 +171,7 @@
   \frametitle{Problem Statement: Column Segmentation}
   \begin{figure}
     \includegraphics[width=4.25cm, valign=c]{assets/table}
-    $\rightarrow$
+    $\longrightarrow$
     \includegraphics[width=4.25cm, valign=c]{assets/csv}
   \end{figure}
   \begin{itemize}
@@ -278,16 +282,17 @@
 \section{Word Embeddings: Practical Considerations}
 
 \begin{frame}
-  \frametitle{Issue: Vocabulary Size}
+  \frametitle{Column Segmentation Issue: Vocabulary Size}
   \begin{itemize}
     \item Is the text actually important?
-    \item Over 10K unique tokens, mostly numbers
+    \item Over \textbf{10K unique tokens}, mostly numbers
+    \pause
     \item \textbf{Solutions:}
     \begin{itemize}
       \item Token $\rightarrow$ Part-of-Speech
       \item Numeric Value $\rightarrow$ \textcolor{Fuchsia}{$\langle \texttt{NUM} \rangle$}
     \end{itemize}
-    \item Reduces vocabulary size to 21 tokens
+    \item Reduces vocabulary size to \textbf{21 tokens}
     \item But lets take a look at alternative solutions to managing vocab size
   \end{itemize}
   % picture of table
@@ -324,7 +329,8 @@
   \item Ngram
   \item CBOW, Skip Gram
   \item GloVe
-  \item Sentence Embeddings: ELMo
+  \item ELMo
+  \item BERT
 \end{itemize}
 
 \end{frame}
@@ -578,6 +584,7 @@
   \item We can pad sentences of different lengths to increase batch size
   \item While also minimizing the use of padding
   \item Matrix Operations are faster
+  \item \textbf{Warning!} Make sure padding is not influencing the hidden state
 \end{itemize}
 \end{frame}
 
@@ -613,7 +620,7 @@
   \begin{itemize}
     \item LogSumExp is minimized on confident predictions
   \end{itemize}
-  \item Solution: smooth the distribution
+  \item Solution: \textbf{smooth} the distribution
 \end{itemize}
 \end{frame}
 
@@ -770,15 +777,19 @@
   \end{equation*}
 \end{frame}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\section{Thank You!}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\section{Seq2Seq in Action: Advanced Techniques\\(Part 2)}
+\begin{frame}
+  \frametitle{Translation Results: TL;DR}
+  \begin{itemize}
+    \item Reasonably for small sequences
+    \item Struggles to terminate properly
+    \begin{itemize}
+      \item Maybe more training?
+    \end{itemize}
+    \item Long Sequences are a mess
+    \pause
+    \item \textbf{However} this indicates that enough noise can be transfered via the hidden state
+  \end{itemize}
+\end{frame}
 
 \begin{frame}
   \frametitle{Review}
@@ -789,7 +800,41 @@
       \item How can I reduce my vocabulary size?
       \item How do I train a Seq2Seq model?
     \end{itemize}
-    \item Part 2 wil explore more advanced concepts such as:
+    \item Part 2 will explore more advanced concepts such as:
+    \begin{itemize}
+      \item Decoding with Beam Search
+      \item Modeling Recurrent Relations
+      \item Other applications of Sequence Modeling
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Thank You!}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\title{Seq2Seq in Action: Column Segmentation}
+\subtitle{Part 2}
+\date{January 23, 2020}
+
+\begin{frame}
+\titlepage
+\end{frame}
+% \section{Seq2Seq in Action: Advanced Techniques\\Part 2\\January 23, 2020}
+
+\begin{frame}
+  \frametitle{Review}
+  \begin{itemize}
+    \item We have covered:
+    \begin{itemize}
+      \item What are Seq2Seq Models?
+      \item How can I reduce my vocabulary size?
+      \item How do I train a Seq2Seq model?
+    \end{itemize}
+    \item Part 2 will explore more advanced concepts such as:
     \begin{itemize}
       \item Decoding with Beam Search
       \item Modeling Recurrent Relations
@@ -800,6 +845,15 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Decoding: Making better Translations}
+
+\begin{frame}
+  \frametitle{Beam Search}
+  \begin{itemize}
+    \item Beam Search is a technique to explore different translation paths
+    \item Based on the idea that you \textbf{shouldn't take the greedy path}
+    \item And that the best path may be sub-optimal during early iterations
+  \end{itemize}
+\end{frame}
 
 \begin{frame}
 \frametitle{Beam Search}
@@ -1033,16 +1087,16 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
 
 \begin{frame}
 \frametitle{Aside: The Influence of Padding in RNNs}
-\begin{itemize}
-  \item Assume the embedding $E\left[ \textcolor{WildStrawberry}{\langle \texttt{PAD} \rangle} \right] = \mathbf{0}$
-  \item Are we safe? \pause \textbf{NO!}
-  \item Because of the bias term, zero input does not result in a zero output
   \begin{itemize}
-    \item This alters the hidden state being passed onto the next iteration
+    \item Assume the embedding $E\left[ \textcolor{WildStrawberry}{\langle \texttt{PAD} \rangle} \right] = \mathbf{0}$
+    \item Are we safe? \pause \textbf{NO!}
+    \item Because of the bias term, zero input does not result in a zero output
+    \begin{itemize}
+      \item This alters the hidden state being passed onto the next iteration
+    \end{itemize}
+    \item Don't even think about the mess bidirectionals become...
+    \item \textbf{Question:} Does this mean we learn the amount of padding for a given sequence?
   \end{itemize}
-  \item Don't even think about the mess bidirectionals become...
-  \item \textbf{Question:} Does this mean we learn the amount of padding for a given sequence?
-\end{itemize}
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
