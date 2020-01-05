@@ -1130,7 +1130,7 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
 \end{frame}
 
 \begin{frame}
-  \frametitle{Secondary Approach: Training Labels}
+  \frametitle{Independent Row: Training Labels}
   \begin{itemize}
     \item Labels are now binary vectors, where $x_i = 1$ implies that there is a $\textcolor{WildStrawberry}{\langle \texttt{SEG} \rangle}$
       between $x_i$ and $x_{i+1}$
@@ -1203,24 +1203,76 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
   \end{figure}
 \end{frame}
 
+% \begin{frame}
+%   \frametitle{Independent Row: Sample Results}
+%   \begin{figure}
+%     \centering
+%     \includegraphics[height=3.75cm, valign=c]{assets/cm}
+%     \includegraphics[height=3.75cm, valign=c]{assets/cm_norm}
+%   \end{figure}
+%   \begin{center}
+%     \begin{tabular}{rcccr}
+%     \toprule
+%     {} &  Precision &  Recall &  F1-Score & Support \\
+%     \midrule
+%     Label: 0 & $0.99$ & $0.92$ & $0.96$ & $168,275$ \\
+%     Label: 1 & $0.67$ & $0.97$ & $0.80$ & $28,685$ \\
+%     \midrule
+%     accuracy & {} & {} & $0.93$ & $196,960$ \\
+%     macro avg & $0.83$ & $0.95$ & $0.88$ & $196,960$ \\
+%     weighted avg & $0.95$ & $0.93$ & $0.93$ & $196,960$ \\
+%     \bottomrule
+%     \end{tabular}
+%   \end{center}
+%   % something
+%   % metrics
+%   % graphs
+% \end{frame}
+
 \begin{frame}
-  \frametitle{Secondary Approach: Sample Results}
+  \frametitle{Independent Row: Sample Results (Training)}
   \begin{figure}
     \centering
-    \includegraphics[height=3.75cm, valign=c]{assets/cm}
-    \includegraphics[height=3.75cm, valign=c]{assets/cm_norm}
+    \includegraphics[height=3.75cm, valign=c]{assets/ind_cm_train}
+    \includegraphics[height=3.75cm, valign=c]{assets/ind_cm_norm_train}
   \end{figure}
   \begin{center}
     \begin{tabular}{rcccr}
     \toprule
     {} &  Precision &  Recall &  F1-Score & Support \\
     \midrule
-    Label: 0 & $0.99$ & $0.92$ & $0.96$ & $168,275$ \\
-    Label: 1 & $0.67$ & $0.97$ & $0.80$ & $28,685$ \\
+    Label: 0 & $0.99$ & $0.96$ & $0.98$ & $146,327$ \\
+    Label: 1 & $0.80$ & $0.96$ & $0.88$ & $24,764$ \\
     \midrule
-    accuracy & {} & {} & $0.93$ & $196,960$ \\
-    macro avg & $0.83$ & $0.95$ & $0.88$ & $196,960$ \\
-    weighted avg & $0.95$ & $0.93$ & $0.93$ & $196,960$ \\
+    accuracy & {} & {} & $0.96$ & $171,091$ \\
+    macro avg & $0.90$ & $0.96$ & $0.93$ & $171,091$ \\
+    weighted avg & $0.97$ & $0.96$ & $0.96$ & $171,091$ \\
+    \bottomrule
+    \end{tabular}
+  \end{center}
+  % something
+  % metrics
+  % graphs
+\end{frame}
+
+\begin{frame}
+  \frametitle{Independent Row: Sample Results (Validation)}
+  \begin{figure}
+    \centering
+    \includegraphics[height=3.75cm, valign=c]{assets/ind_cm_test}
+    \includegraphics[height=3.75cm, valign=c]{assets/ind_cm_norm_test}
+  \end{figure}
+  \begin{center}
+    \begin{tabular}{rcccr}
+    \toprule
+    {} &  Precision &  Recall &  F1-Score & Support \\
+    \midrule
+    Label: 0 & $0.97$ & $0.94$ & $0.95$ & $21,948$ \\
+    Label: 1 & $0.71$ & $0.85$ & $0.77$ & $3,921$ \\
+    \midrule
+    accuracy & {} & {} & $0.92$ & $25,869$ \\
+    macro avg & $0.84$ & $0.89$ & $0.86$ & $25,869$ \\
+    weighted avg & $0.93$ & $0.92$ & $0.93$ & $25,869$ \\
     \bottomrule
     \end{tabular}
   \end{center}
@@ -1363,23 +1415,49 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
 \end{frame}
 
 \begin{frame}
-  \frametitle{Joint Table Training: Sample Results}
+  \frametitle{Joint Table Training: Sample Results (Training)}
   \begin{figure}
     \centering
-    \includegraphics[height=3.75cm, valign=c]{assets/cm_table}
-    \includegraphics[height=3.75cm, valign=c]{assets/cm_table_norm}
+    \includegraphics[height=3.75cm, valign=c]{assets/joint_cm_table_train}
+    \includegraphics[height=3.75cm, valign=c]{assets/joint_cm_table_norm_train}
   \end{figure}
   \begin{center}
     \begin{tabular}{rcccr}
     \toprule
     {} &  Precision &  Recall &  F1-Score & Support \\
     \midrule
-    Label: 0 & $1.00$ & $0.96$ & $0.98$ & $168,275$ \\
-    Label: 1 & $0.83$ & $0.98$ & $0.90$ & $28,685$ \\
+    Label: 0 & $1.00$ & $0.98$ & $0.99$ & $143,872$ \\
+    Label: 1 & $0.88$ & $0.97$ & $0.93$ & $23,794$ \\
     \midrule
-    accuracy & {} & {} & $0.97$ & $196,960$ \\
-    macro avg & $0.91$ & $0.97$ & $0.94$ & $196,960$ \\
-    weighted avg & $0.97$ & $0.97$ & $0.97$ & $196,960$ \\
+    accuracy & {} & {} & $0.98$ & $167,666$ \\
+    macro avg & $0.94$ & $0.98$ & $0.96$ & $167,666$ \\
+    weighted avg & $0.98$ & $0.98$ & $0.98$ & $167,666$ \\
+    \bottomrule
+    \end{tabular}
+  \end{center}
+  % something
+  % metrics
+  % graphs
+\end{frame}
+
+\begin{frame}
+  \frametitle{Joint Table Training: Sample Results (Validation)}
+  \begin{figure}
+    \centering
+    \includegraphics[height=3.75cm, valign=c]{assets/joint_cm_table_test}
+    \includegraphics[height=3.75cm, valign=c]{assets/joint_cm_table_norm_test}
+  \end{figure}
+  \begin{center}
+    \begin{tabular}{rcccr}
+    \toprule
+    {} &  Precision &  Recall &  F1-Score & Support \\
+    \midrule
+    Label: 0 & $0.97$ & $0.95$ & $0.96$ & $24,403$ \\
+    Label: 1 & $0.78$ & $0.87$ & $0.82$ & $4,891$ \\
+    \midrule
+    accuracy & {} & {} & $0.94$ & $29,294$ \\
+    macro avg & $0.88$ & $0.91$ & $0.89$ & $29,294$ \\
+    weighted avg & $0.94$ & $0.94$ & $0.94$ & $29,294$ \\
     \bottomrule
     \end{tabular}
   \end{center}
@@ -1532,23 +1610,23 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
 \end{frame}
 
 \begin{frame}
-  \frametitle{Joint Table Training with Swapping: Sample Results}
+  \frametitle{Joint Table Training with Swapping: Sample Results (Training)}
   \begin{figure}
     \centering
-    \includegraphics[height=3.75cm, valign=c]{assets/cm_table_swap}
-    \includegraphics[height=3.75cm, valign=c]{assets/cm_table_swap_norm}
+    \includegraphics[height=3.75cm, valign=c]{assets/swap_cm_table_train}
+    \includegraphics[height=3.75cm, valign=c]{assets/swap_cm_table_norm_train}
   \end{figure}
   \begin{center}
     \begin{tabular}{rcccr}
     \toprule
     {} &  Precision &  Recall &  F1-Score & Support \\
     \midrule
-    Label: 0 & $1.00$ & $0.97$ & $0.98$ & $168,275$ \\
-    Label: 1 & $0.83$ & $0.98$ & $0.90$ & $28,685$ \\
+    Label: 0 & $0.99$ & $0.98$ & $0.99$ & $143,872$ \\
+    Label: 1 & $0.88$ & $0.96$ & $0.91$ & $23,794$ \\
     \midrule
-    accuracy & {} & {} & $0.97$ & $196,960$ \\
-    macro avg & $0.92$ & $0.97$ & $0.94$ & $196,960$ \\
-    weighted avg & $0.97$ & $0.97$ & $0.97$ & $196,960$ \\
+    accuracy & {} & {} & $0.97$ & $167,666$ \\
+    macro avg & $0.93$ & $0.97$ & $0.95$ & $167,666$ \\
+    weighted avg & $0.98$ & $0.97$ & $0.98$ & $167,666$ \\
     \bottomrule
     \end{tabular}
   \end{center}
@@ -1558,7 +1636,33 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
 \end{frame}
 
 \begin{frame}
-  \frametitle{Summary of Methods}
+  \frametitle{Joint Table Training with Swapping: Sample Results (Validation)}
+  \begin{figure}
+    \centering
+    \includegraphics[height=3.75cm, valign=c]{assets/swap_cm_table_test}
+    \includegraphics[height=3.75cm, valign=c]{assets/swap_cm_table_norm_test}
+  \end{figure}
+  \begin{center}
+    \begin{tabular}{rcccr}
+    \toprule
+    {} &  Precision &  Recall &  F1-Score & Support \\
+    \midrule
+    Label: 0 & $0.97$ & $0.95$ & $0.96$ & $24,403$ \\
+    Label: 1 & $0.78$ & $0.83$ & $0.80$ & $4,891$ \\
+    \midrule
+    accuracy & {} & {} & $0.93$ & $29,294$ \\
+    macro avg & $0.87$ & $0.89$ & $0.88$ & $29,294$ \\
+    weighted avg & $0.93$ & $0.93$ & $0.93$ & $29,294$ \\
+    \bottomrule
+    \end{tabular}
+  \end{center}
+  % something
+  % metrics
+  % graphs
+\end{frame}
+
+\begin{frame}
+  \frametitle{Summary of Methods (Validation)}
   \begin{center}
     \footnotesize
     % \begin{tabular}{rccc|ccc|c}
@@ -1577,15 +1681,15 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
     \toprule
     {} & {} & Independent & Joint & Joint Swapped \\
     \midrule
-    \multirow{3}{*}{Label: 0} & Precision & $0.99$ & $\mathbf{1.00}$ & $\mathbf{1.00}$ \\
-    {}                        & Recall    & $0.92$ & $0.96$ & $\mathbf{0.97}$ \\
-    {}                        & F1-Score  & $0.96$ & $\mathbf{0.98}$ & $\mathbf{0.98}$ \\
+    \multirow{3}{*}{Label: 0} & Precision & $\mathbf{0.97}$ & $\mathbf{0.97}$ & $\mathbf{0.97}$ \\
+    {}                        & Recall    & $0.94$ & $\mathbf{0.95}$ & $\mathbf{0.95}$ \\
+    {}                        & F1-Score  & $0.95$ & $\mathbf{0.96}$ & $\mathbf{0.96}$ \\
     \midrule
-    \multirow{3}{*}{Label: 1} & Precision & $0.67$ & $\mathbf{0.83}$ & $\mathbf{0.83}$ \\
-    {}                        & Recall    & $0.97$ & $\mathbf{0.98}$ & $\mathbf{0.98}$ \\
-    {}                        & F1-Score  & $0.80$ & $\mathbf{0.90}$ & $\mathbf{0.90}$ \\
+    \multirow{3}{*}{Label: 1} & Precision & $0.71$ & $\mathbf{0.78}$ & $\mathbf{0.78}$ \\
+    {}                        & Recall    & $0.85$ & $\mathbf{0.87}$ & $0.83$ \\
+    {}                        & F1-Score  & $0.77$ & $\mathbf{0.82}$ & $0.80$ \\
     \midrule
-    {}                        & Accuracy  & $0.93$ & $\mathbf{0.97}$ & $\mathbf{0.97}$ \\
+    {}                        & Accuracy  & $0.92$ & $\mathbf{0.94}$ & $0.93$ \\
     \bottomrule
     \end{tabular}
   \end{center}
@@ -1596,7 +1700,7 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
   \begin{itemize}
     \item We can learn text segments purely from the sequence of Part-of-Speech tags
     \item It is useful to jointly train/predict on the table instead of assuming independence
-    \item No significant difference between regular and swapped hidden state propagation
+    \item Is there any benefit to swapping hidden states during propagation?
     \item \textbf{Note:}
     \begin{itemize}
       \item We use the concept of \textit{deep transition} in Seq2Seq for joint training
