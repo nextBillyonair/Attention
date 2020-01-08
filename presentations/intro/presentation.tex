@@ -154,11 +154,53 @@
       \item But spacing is \textbf{variable} in tables
       \item Text justification (left, center, right)
     \end{itemize}
-    \item \textbf{Union Find} to group columns by \textbf{Intersection Over Union (IOU)}
+    \item \textbf{Union-Find Disjoint Set (UFDS) Algorithm} to group columns by \textbf{Intersection Over Union (IOU)}
     \begin{figure}
-      \includegraphics[width=4.25cm, valign=c]{assets/uf1}
-      $\longrightarrow$
-      \includegraphics[width=4.25cm, valign=c]{assets/uf2}
+      \centering
+      \begin{tikzpicture}[shorten >=1pt,node distance=1.1cm,on grid,auto, every node/.style={scale=0.75},
+        el/.style={inner sep=2pt, align=left, sloped}]
+
+        \node[circle, draw] (r0) {$0$};
+        \node[circle, draw] (r1) [right=of r0] {$1$};
+        \node[circle, draw] (r2) [right=of r1] {$2$};
+        \node[circle, draw] (r3) [below=of r0] {$3$};
+        \node[circle, draw] (r4) [right=of r3] {$4$};
+        \node[circle, draw] (r5) [right=of r4] {$5$};
+        \node[circle, draw] (r6) [below=of r3] {$6$};
+        \node[circle, draw] (r7) [right=of r6] {$7$};
+        \node[circle, draw] (r8) [right=of r7] {$8$};
+
+      \end{tikzpicture}
+      \quad\quad\quad\quad
+      \begin{tikzpicture}[shorten >=1pt,node distance=1.1cm,on grid,auto, every node/.style={scale=0.75},
+        el/.style={inner sep=2pt, align=left, sloped}]
+
+        \node[circle, draw] (r0) {$0$};
+        \node[circle, draw] (r1) [right=of r0] {$1$};
+        \node[circle, draw] (r2) [right=of r1] {$2$};
+
+        \node[circle, draw] (r3) [below=of r0] {$3$};
+        \node[circle, draw] (r4) [right=of r3] {$4$};
+        \node[circle, draw] (r5) [right=of r4] {$5$};
+
+        \node[circle, draw] (r6) [below=of r3] {$6$};
+        \node[circle, draw] (r7) [right=of r6] {$7$};
+        \node[circle, draw] (r8) [right=of r7] {$8$};
+
+
+        \path[->]
+          (r3) edge [bend right] node[] {} (r0)
+          (r6) edge [bend left] node[] {} (r0)
+
+          (r4) edge [bend right] node[] {} (r1)
+          (r7) edge [bend left] node[] {} (r1)
+
+          (r5) edge [bend right] node[] {} (r2)
+          (r8) edge [bend left] node[] {} (r2)
+
+        ;
+
+      \end{tikzpicture}
     \end{figure}
     \pause
     \item \textbf{Idea:} Use a Seq2Seq to learn correct segmentation
