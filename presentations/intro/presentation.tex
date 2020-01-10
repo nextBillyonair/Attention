@@ -592,11 +592,11 @@
 \frametitle{Teacher Forcing}
 \begin{itemize}
   \item Instead of refeeding the predicted token, replace it with the true token randomly
-  \item This is only done during training, not inference
+  \item This is only done during training, not decoding
 \end{itemize}
 \begin{equation*}
   y_{i+1} = \begin{cases}
-    \argmax_{j} \theta_i  & \mathcal{U}(0, 1) < \text{TF} \\
+    \argmax_{j} \theta_i  & \mathcal{U}(0, 1) > \text{TF} \\
     t_{i+1} & else
   \end{cases}
 \end{equation*}
@@ -697,7 +697,7 @@
   \end{itemize}
   \begin{equation*}
     y_{i+1} = \begin{cases}
-      \argmax_{j} \theta_i  & \mathcal{U}(0, 1) < \text{TF} \\
+      \argmax_{j} \theta_i  & \mathcal{U}(0, 1) > \text{TF} \\
       t_{i+1} & else
     \end{cases}
   \end{equation*}
