@@ -83,7 +83,7 @@
 \begin{frame}
 \frametitle{How can we improve this model?}
 \begin{itemize}
-  \item Add an \textbf{alignment model} to force the model to 'attend' to different parts of the input
+  \item Add an \textbf{alignment model} to force the model to 'attend' and 'read' different parts of the input
   \item Gives the decoder direct access to the encodings to make generations
   \item Known as a \textbf{context vector}
 \end{itemize}
@@ -120,14 +120,14 @@
         \node[] (x) {$x_{i-1}$};
 
         \node[draw,diamond] (h0) [above=of x] {$h_k$};
-        \node[] (h1) [above=of h0, yshift=-1cm] {$\vdots$};
+        \node[] (h1) [above=of h0, yshift=-0.75cm] {$\vdots$};
         \node[draw,diamond] (h2) [above=of h1, yshift=-1cm] {$h_j$};
-        \node[] (h3) [above=of h2, yshift=-1cm] {$\vdots$};
+        \node[] (h3) [above=of h2, yshift=-0.75cm] {$\vdots$};
         \node[draw,diamond] (h4) [above=of h3, yshift=-1cm] {$h_0$};
 
         \node[] (c) [right=of h2] {$c_i$};
 
-        \node[]  (emb) [right=of x, xshift=1cm] {Embedding};
+        \node[]  (emb) [right=of x, xshift=0.75cm] {Embedding};
         \node[]  (concat) [right=of c, xshift=1cm] {Concat};
         \node[] (rnn) [right=of concat, xshift=0.5cm] {RNN};
 
@@ -138,21 +138,20 @@
 
         \node[] (sn) [below=of rnn] {$s_i$};
 
-        \draw[->] (x) to (emb) node [] {};
-        \draw[->] (emb) to (concat) node [] {};
-        \draw[->] (c) to (concat) node [] {};
+        \path [->]
+          (x) edge [] node {} (emb)
+          (emb) edge [] node {} (concat)
+          (c) edge [] node {} (concat)
 
-        \draw[->] (h0) to (c) node [] {};
-        \draw[->] (h2) to (c) node [] {};
-        \draw[->] (h4) to (c) node [] {};
+          (h0) edge [bend right=10] node {} (c)
+          (h2) edge [] node {} (c)
+          (h4) edge [bend left=10] node {} (c)
 
-        % \draw[->] (c) to (concat) node [] {};
-        % \path [->] (c) edge [bend left=30] node {} (concat);
-        \path [->] (s) edge [bend right=15] node {} (c);
-        \draw[->] (concat) to (rnn) node [] {};
-        \draw[->] (s) to (rnn) node [] {};
-        \draw[->] (rnn) to (sn) node [] {};
-        \draw[->] (rnn) to (xn) node [] {};
+          (concat) edge [] node {} (rnn)
+          (s) edge [] node {} (rnn)
+          (rnn) edge [] node {} (sn)
+          (rnn) edge [] node {} (xn)
+          (s) edge [bend right=15] node {} (c);
 
       \end{tikzpicture}
     \end{figure}
@@ -301,31 +300,32 @@
 
         \node[] (c) [right=of sum, xshift=-0.25cm] {$c_i$};
 
-        \draw[->] (h0) to (a0) node [] {};
-        \draw[->] (h2) to (a2) node [] {};
-        \draw[->] (h4) to (a4) node [] {};
+        \path [->]
+          (h0) edge [] node[] {} (a0)
+          (h2) edge [] node[] {} (a2)
+          (h4) edge [] node[] {} (a4)
 
-        \draw[->] (a0) to (softmax) node [] {};
-        \draw[->] (a2) to (softmax) node [] {};
-        \draw[->] (a4) to (softmax) node [] {};
+          (a0) edge [bend right=10] node[] {} (softmax)
+          (a2) edge [] node[] {} (softmax)
+          (a4) edge [bend left=10] node[] {} (softmax)
 
-        \draw[->] (softmax) to (mult0) node [] {};
-        \draw[->] (softmax) to (mult2) node [] {};
-        \draw[->] (softmax) to (mult4) node [] {};
+          (softmax) edge [bend right=10] node[] {} (mult0)
+          (softmax) edge [] node[] {} (mult2)
+          (softmax) edge [bend left=10] node[] {} (mult4)
 
-        \draw[->] (mult0) to (sum) node [] {};
-        \draw[->] (mult2) to (sum) node [] {};
-        \draw[->] (mult4) to (sum) node [] {};
+          (mult0) edge [bend right=10] node[] {} (sum)
+          (mult2) edge [] node[] {} (sum)
+          (mult4) edge [bend left=10] node[] {} (sum)
 
-        \draw[->] (sum) to (c) node [] {};
+          (sum) edge [] node[] {} (c)
 
-        \path [->] (h0) edge [bend left=30] node {} (mult0);
-        \path [->] (h2) edge [bend left=40] node {} (mult2);
-        \path [->] (h4) edge [bend right=30] node {} (mult4);
+          (h0) edge [bend left=30] node {} (mult0)
+          (h2) edge [bend left=40] node {} (mult2)
+          (h4) edge [bend right=30] node {} (mult4)
 
-        \path [->] (s) edge [bend left=20] node {} (a0);
-        \path [->] (s) edge [bend right=40] node {} (a2);
-        \path [->] (s) edge [bend right=20] node {} (a4);
+          (s) edge [bend left=20] node {} (a0)
+          (s) edge [bend right=40] node {} (a2)
+          (s) edge [bend right=20] node {} (a4);
 
       \end{tikzpicture}
     \end{figure}
@@ -398,12 +398,14 @@
 \begin{frame}
 \frametitle{Luong Attention: Location Attention}
 \begin{equation*}
-  a\left( s_{i-1}, h_j \right) = W_a h_j
+  a\left( s_{i-1}, h_j \right) = W_a s_{i-1}
 \end{equation*}
 \begin{itemize}
   \item An approach to reweight exclusively on the decoder state
   \item Single learnable matrix $W_a$
-  \item Output is scalar
+  \item Output is vector of fixed-length
+  \item \textbf{Footnote:} For short sentences, only use the top part of the vector. For long sentences, ignore words near the end.
+  \item \textbf{Note:} Implies that this only works for fixed-length sentences!
 \end{itemize}
 \end{frame}
 
@@ -487,7 +489,8 @@
   \begin{itemize}
     \item Use a gaussian penalty to favor words near $p_t$
     \item Note: $p_t \in \mathbb{R}$, $j \in \mathbb{Z}$
-    \item $j$ is the \textit{integer} position of the encoding
+    \item $j$ is the \textit{integer} position of the encoding within the window
+    \item Empirically set $\sigma = \frac{D}{2}$
     \item $a\left( s_{i-1}, h_j \right)$ is any previous attention mechanism
   \end{itemize}
 \end{frame}
@@ -549,20 +552,23 @@
   \end{equation*}
   \vspace{1.5cm}
   \begin{equation*}
-    c_i = \begin{bmatrix} \textcolor{WildStrawberry}{0.59} \\ \textcolor{Fuchsia}{0.18} \\ \textcolor{ForestGreen}{0.16} \end{bmatrix} \cdot \begin{bmatrix*}[r] 0.17 \\ 0.53 \\ -0.22 \end{bmatrix*} + \begin{bmatrix} \textcolor{WildStrawberry}{0.09} \\ \textcolor{Fuchsia}{0.36} \\ \textcolor{ForestGreen}{0.74} \end{bmatrix} \cdot \begin{bmatrix*}[r] 1.34 \\ 0.39 \\ 0.45 \end{bmatrix*} + \begin{bmatrix} \textcolor{WildStrawberry}{0.32} \\ \textcolor{Fuchsia}{0.46} \\ \textcolor{ForestGreen}{0.10} \end{bmatrix} \cdot \begin{bmatrix*}[r] -0.08 \\ -1.39 \\ 1.21 \end{bmatrix*}
+    c_i = \begin{bmatrix} \textcolor{WildStrawberry}{0.59} \\ \textcolor{Fuchsia}{0.18} \\ \textcolor{ForestGreen}{0.16} \end{bmatrix} \odot \begin{bmatrix*}[r] 0.17 \\ 0.53 \\ -0.22 \end{bmatrix*} + \begin{bmatrix} \textcolor{WildStrawberry}{0.09} \\ \textcolor{Fuchsia}{0.36} \\ \textcolor{ForestGreen}{0.74} \end{bmatrix} \odot \begin{bmatrix*}[r] 1.34 \\ 0.39 \\ 0.45 \end{bmatrix*} + \begin{bmatrix} \textcolor{WildStrawberry}{0.32} \\ \textcolor{Fuchsia}{0.46} \\ \textcolor{ForestGreen}{0.10} \end{bmatrix} \odot \begin{bmatrix*}[r] -0.08 \\ -1.39 \\ 1.21 \end{bmatrix*}
   \end{equation*}
 \end{frame}
 
 \begin{frame}
 \frametitle{Multi-Headed Attention}
 \begin{equation*}
-  \alpha_{ij}^d = \frac{\exp\left(a^d\left(s_{i-1}, h_j\right)\right)}{\sum_k \exp \left( a^d \left(s_{i-1}, h_k\right) \right)}
+  \alpha_{ij}^k = \frac{\exp\left(a^k\left(s_{i-1}, h_j\right)\right)}{\sum_k \exp \left( a^k \left(s_{i-1}, h_k\right) \right)}
 \end{equation*}
 \begin{itemize}
   \item Why not have $K$ attention weights?
 \end{itemize}
 \begin{equation*}
-  \alpha_{ij} = \frac{1}{k} \sum_k \alpha^k_{ij}
+  c_i^{k} = \sum_j \alpha_{ij}^k \cdot h_j
+\end{equation*}
+\begin{equation*}
+  c_i =\frac{1}{K} \sum_k c_i^k
 \end{equation*}
 \begin{itemize}
   \item \textit{Multi-Headed Attention} is just aggregating several attended representations of the encodings
@@ -573,21 +579,92 @@
 \begin{frame}
   \frametitle{Multi-Headed Attention}
   \begin{equation*}
-    \begin{split}
-    \alpha_{ij}^d &= \frac{\exp\left(a^d\left(s_{i-1}, h_j\right)\right)}{\sum_k \exp \left( a^d \left(s_{i-1}, h_k\right) \right)}\\
-    \alpha_{ij} &= \begin{bmatrix*} \alpha^0_{ij} \\ \vdots \\ \alpha^k_{ij} \\ \vdots \\ \alpha^K_{ij} \end{bmatrix*} W_a
-  \end{split}
+    \alpha_{ij}^d = \frac{\exp\left(a^d\left(s_{i-1}, h_j\right)\right)}{\sum_k \exp \left( a^d \left(s_{i-1}, h_k\right) \right)}
+  \end{equation*}
+  \begin{equation*}
+    c_i^{k} = \sum_j \alpha_{ij}^k \cdot h_j
+  \end{equation*}
+  \begin{equation*}
+    c_i = \begin{bmatrix*} c^0_{i} \\ \vdots \\ c^k_{i} \\ \vdots \\ c^K_{i} \end{bmatrix*} W_a
   \end{equation*}
   \begin{itemize}
-    \item \textbf{Alternative:} Concat each weight and use a linear layer to reduce the dimensionality
-    \item Weighted Average of $K$ Weighted Averages!
+    \item \textbf{Alternative:} Concat each context vector and use a linear layer to reduce the dimensionality
+    \item Weighted Average of $K$ 'attended' context vectors!
   \end{itemize}
 \end{frame}
 
 \begin{frame}
-  \frametitle{MHA Visual from the Paper}
+  \frametitle{Multi-Headed Attention}
+  \begin{figure}
+      \centering
+      \begin{tikzpicture}[shorten >=1pt,node distance=1.25cm,on grid,auto, every node/.style={scale=0.75},
+        el/.style={inner sep=2pt, align=left, sloped}]
 
+        \node[draw,diamond]  (h2)  {$h_j$};
+        \node[]  (h1) [above=of h2] {$\vdots$};
+        \node[]  (h3) [below=of h2] {$\vdots$};
+        \node[draw,diamond] [above=of h1]  (h0)  {$h_0$};
+        \node[draw,diamond]  (h4) [below=of h3] {$h_{k}$};
+
+
+        \node[] (a0) [right=of h2, xshift=4cm] {$\texttt{Attention}$};
+        \node[] (tmp1) [above=of a0, yshift=-6mm] {$\vdots$};
+        \node[] (a1) [above=of tmp1, yshift=-6mm] {$\texttt{Attention}$};
+        \node[] (tmp2) [below=of a0, yshift=6mm] {$\vdots$};
+        \node[] (a2) [below=of tmp2, yshift=6mm] {$\texttt{Attention}$};
+
+        \node[] (tmp3) [above=of a1, yshift=-6mm] {$\vdots$};
+        \node[] (tmp4) [below=of a2, yshift=6mm] {$\vdots$};
+        \node[] (a3) [above=of tmp3, yshift=-6mm] {$\texttt{Attention}$};
+        \node[] (a4) [below=of tmp4, yshift=6mm] {$\texttt{Attention}$};
+
+        \node[] (s) [left=of a3, xshift=-2.5cm, yshift=8mm] {$s_{i-1}$};
+
+
+
+        \node[] (agg) [right=of a0, xshift=2.5cm] {$\texttt{Aggregate}$};
+
+        \node[] (c) [right=of agg, xshift=0.5cm] {$c_i$};
+
+        \path[->]
+          (h0) edge [bend right=10] node[] {} (a0)
+          (h2) edge [] node[] {} (a0)
+          (h4) edge [bend left=10] node[] {} (a0)
+          (h0) edge [bend right=10] node[] {} (a1)
+          (h2) edge [] node[] {} (a1)
+          (h4) edge [bend left=10] node[] {} (a1)
+          (h0) edge [bend right=10] node[] {} (a2)
+          (h2) edge [] node[] {} (a2)
+          (h4) edge [bend left=10] node[] {} (a2)
+          (h0) edge [bend right=10] node[] {} (a3)
+          (h2) edge [] node[] {} (a3)
+          (h4) edge [bend left=10] node[] {} (a3)
+          (h0) edge [bend right=10] node[] {} (a4)
+          (h2) edge [] node[] {} (a4)
+          (h4) edge [bend left=10] node[] {} (a4)
+
+          (s) edge [bend right=15] node[] {} (a0)
+          (s) edge [bend left=15] node[] {} (a1)
+          (s) edge [bend right=15] node[] {} (a2)
+          (s) edge [bend left=15] node[] {} (a3)
+          (s) edge [bend right=15] node[] {} (a4)
+
+          (a0) edge [] node[el] {$c_{i}^k$} (agg)
+          (a1) edge [bend right=10] node[] {} (agg)
+          (a2) edge [bend left=10] node[] {} (agg)
+          (a3) edge [bend right=10] node[el, above] {$c_{i}^0$} (agg)
+          (a4) edge [bend left=10] node[el, below] {$c_{i}^K$} (agg)
+
+          (agg) edge [] node[] {} (c);
+
+      \end{tikzpicture}
+    \end{figure}
 \end{frame}
+
+% \begin{frame}
+%   \frametitle{MHA Visual from the Paper}
+%
+% \end{frame}
 
 \begin{frame}
   \frametitle{Self-Attention: Generalized}
@@ -605,37 +682,87 @@
 % MESSY
 \begin{frame}
   \frametitle{Self-Attention: What are Queries, Keys, and Values?}
-  \begin{itemize}
-    \item \textbf{Encoders}
-    \begin{itemize}
-      \item Source Embeddings, optionally re-mixed with linear layers
-    \end{itemize}
-  \end{itemize}
-  \begin{itemize}
-    \item \textbf{Decoders}
-    \begin{itemize}
-      \item More complicated...
-      \item Technically 2 Self-Attentions
-      \item One that is the decoded embeddings
-      \item Then use that as the value for a second attention
-    \end{itemize}
-  \end{itemize}
+  % \begin{itemize}
+  %   \item \textbf{Encoders}
+  %   \begin{itemize}
+  %     \item Source Embeddings, optionally re-mixed with linear layers
+  %   \end{itemize}
+  % \end{itemize}
+  % \begin{itemize}
+  %   \item \textbf{Decoders}
+  %   \begin{itemize}
+  %     \item More complicated...
+  %     \item Technically 2 Self-Attentions
+  %     \item One that is the decoded embeddings
+  %     \item Then use that as the value for a second attention
+  %   \end{itemize}
+  % \end{itemize}
 \end{frame}
 
 \begin{frame}
-\frametitle{Self Attention: Familiar Notation}
-\begin{equation*}
-  a_{ij} = \frac{1}{|h|} h_{j}h_k^T
-\end{equation*}
-
-\begin{equation*}
-  \alpha_{jk} = \frac{\exp\left( a_{jk} \right)}{\sum_k \exp \left( a_{jk} \right)}
-\end{equation*}
-
-\begin{equation*}
-  \texttt{self-attention}\left( h_j \right) = \sum_k \alpha_{jk} h_k
-\end{equation*}
+  \frametitle{Self-Attention: Packing the Encodings}
+  \begin{itemize}
+    \item To create Queries, Keys, and Values, we must pack the encodings
+    \item Create a matrix $H \in \mathbb{R}^{S \times d}$
+    \item $S$ is sequence length, $d$ is the dimensionality of the vectors
+  \end{itemize}
+  \begin{equation*}
+    H = \begin{bmatrix}
+    \longleftarrow h_0 \longrightarrow \\
+    \vdots \\
+    \longleftarrow h_j \longrightarrow  \\
+    \vdots \\
+    \longleftarrow h_k \longrightarrow
+\end{bmatrix}
+  \end{equation*}
 \end{frame}
+
+\begin{frame}
+  \frametitle{Self-Attention: Computation Graph}
+  \begin{figure}
+      \centering
+      \begin{tikzpicture}[shorten >=1pt,node distance=1cm,on grid,auto, every node/.style={scale=0.75},
+        el/.style={inner sep=2pt, align=left, sloped}]
+
+        \node[draw,diamond]  (H)  {$H$};
+
+        \node[] (WK) [below=of H] {$\texttt{linear}$};
+        \node[] (WQ) [right=of WK, xshift=1cm] {$\texttt{linear}$};
+        \node[] (WV) [left=of WK, xshift=-1cm] {$\texttt{linear}$};
+
+        \node[] (Q) [below=of WQ] {$Q$};
+        \node[] (K) [below=of WK] {$K$};
+        \node[] (V) [below=of WV] {$V$};
+
+        \node[] (matmul) [below=of Q, xshift=-1.15cm] {$\texttt{matmul}$};
+        \node[] (scale) [below=of matmul] {$\texttt{scale}$};
+        \node[] (softmax) [below=of scale] {$\texttt{softmax}$};
+        \node[] (matmul2) [below=of softmax, xshift=-1.2cm] {$\texttt{matmul}$};
+
+        \node[] (c) [below=of matmul2] {$\texttt{output}$};
+
+
+        \path[->]
+        (H) edge [bend left=20] node[] {} (WQ)
+        (H) edge [] node[] {} (WK)
+        (H) edge [bend right=20] node[] {} (WV)
+
+        (WQ) edge [] node[] {} (Q)
+        (WK) edge [] node[] {} (K)
+        (WV) edge [] node[] {} (V)
+
+        (Q) edge [bend left=20] node[] {} (matmul)
+        (K) edge [bend right=20] node[] {} (matmul)
+        (matmul) edge [] node[] {} (scale)
+        (scale) edge [] node[] {} (softmax)
+        (softmax) edge [bend left=20] node[] {} (matmul2)
+        (V) edge [bend right=20] node[] {} (matmul2)
+        (matmul2) edge [] node[] {} (c);
+
+      \end{tikzpicture}
+    \end{figure}
+\end{frame}
+
 
 \section{Practical Considerations}
 % Rework
