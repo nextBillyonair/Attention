@@ -673,6 +673,25 @@
 
 
 \begin{frame}
+  \frametitle{Quick Maths: LogSumExp Bounds}
+  \begin{equation*}
+    \begin{aligned}
+      \max {\{x_{1},\dots ,x_{n}\}}&=\log \left(\exp(\max x_{i})\right)\\
+      &\leq \log \left(\exp(x_{1})+\cdots +\exp(x_{n})\right)\\
+      &\leq \log \left(n\cdot \exp(\max x_{i})\right)\\
+      &=\max {\{x_{1},\dots ,x_{n}\}}+\log(n).
+    \end{aligned}
+  \end{equation*}
+  \begin{itemize}
+    \item The lower bound is \textit{approached} when \textbf{all but one} of the arguments approach $-\infty$
+    \item The upper bound is met when \textbf{all} the arguments are equal (uniform)
+    \item Hence LogSumExp is minimized on a confident prediction
+  \end{itemize}
+
+\end{frame}
+
+
+\begin{frame}
 \frametitle{Cross Entropy and Label Smoothing}
 \begin{itemize}
   \item Softmax
