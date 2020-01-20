@@ -392,11 +392,12 @@
 
 \begin{frame}
 \frametitle{Special Tokens for Sequence Modeling}
+\pause
 \begin{itemize}
   \item $\textcolor{WildStrawberry}{\langle \texttt{PAD} \rangle}$ $\rightarrow$ Padding / Masking
   \item $\textcolor{Periwinkle}{\langle \texttt{UNK} \rangle}$ $\rightarrow$ Unknown words
-  \item $\textcolor{ForestGreen}{\langle \texttt{SOS} \rangle}$ $\rightarrow$ Start of Sentence
-  \item $\textcolor{BrickRed}{\langle \texttt{EOS} \rangle}$ $\rightarrow$ End of Sentence
+  \item $\textcolor{ForestGreen}{\langle \texttt{SOS} \rangle}$ $\rightarrow$ Start of Sequence
+  \item $\textcolor{BrickRed}{\langle \texttt{EOS} \rangle}$ $\rightarrow$ End of Sequence
 \end{itemize}
 \vspace{5mm}
 \begin{equation*}
@@ -421,7 +422,7 @@
         \item Large embedding matrices for source, target language
         \item Large output layers for prediction and softmax
       \end{itemize}
-      \item Naive Solution: Limit the vocab size to most frequent
+      % \item Naive Solution: Limit the vocab size to most frequent
     \end{itemize}
   \end{column}
   \begin{column}{0.45\textwidth}
@@ -560,27 +561,46 @@
 
 
 \begin{frame}
-\frametitle{BPE Tokenization on HHGTTG}
+\frametitle{BPE Tokenization, The Great Gatsby}
 \begin{itemize}
-  \item Unique Characters: $101$
-  \item Unique BPE Tokens (1K iterations): $1,093$
-  \item Unique BPE Tokens (5K iterations): $4,817$
-  \item Unique Tokens: $9,541$
+  \item Unique Characters: $39$
+  \item Unique BPE Tokens (1K iterations): $801$
+  \item Unique BPE Tokens (5K iterations): $3,371$
+  \item Unique Tokens: $5,856$
 \end{itemize}
 \footnotesize
 \begin{equation*}
 \textcolor{ForestGreen}{
-\begin{array}{l}
-  \texttt{there is a the\textcolor{Fuchsia}{@@} ory which st\textcolor{Fuchsia}{@@} at\textcolor{Fuchsia}{@@} es that if ever any\textcolor{Fuchsia}{@@} one } \\
-  \texttt{di\textcolor{Fuchsia}{@@} sc\textcolor{Fuchsia}{@@} o\textcolor{Fuchsia}{@@} ver\textcolor{Fuchsia}{@@} s ex\textcolor{Fuchsia}{@@} ac\textcolor{Fuchsia}{@@} tly what the universe is for } \\
-  \texttt{and why it is here , it will in\textcolor{Fuchsia}{@@} stan\textcolor{Fuchsia}{@@} tly di\textcolor{Fuchsia}{@@} s\textcolor{Fuchsia}{@@} ap\textcolor{Fuchsia}{@@} pe\textcolor{Fuchsia}{@@} ar } \\
-  \texttt{and be re\textcolor{Fuchsia}{@@} pl\textcolor{Fuchsia}{@@} ac\textcolor{Fuchsia}{@@} ed by something even more bi\textcolor{Fuchsia}{@@} zar\textcolor{Fuchsia}{@@} re } \\
-  \texttt{and in\textcolor{Fuchsia}{@@} ex\textcolor{Fuchsia}{@@} p\textcolor{Fuchsia}{@@} li\textcolor{Fuchsia}{@@} c\textcolor{Fuchsia}{@@} able . } \\
-  \texttt{there is another the\textcolor{Fuchsia}{@@} ory which st\textcolor{Fuchsia}{@@} at\textcolor{Fuchsia}{@@} es that } \\
-  \texttt{this has al\textcolor{Fuchsia}{@@} re\textcolor{Fuchsia}{@@} ad\textcolor{Fuchsia}{@@} y happ\textcolor{Fuchsia}{@@} ened .} \\
-  \texttt{in the beg\textcolor{Fuchsia}{@@} in\textcolor{Fuchsia}{@@} ning the universe was cre\textcolor{Fuchsia}{@@} ated . } \\
-  \texttt{this has made a lot of people very an\textcolor{Fuchsia}{@@} gr\textcolor{Fuchsia}{@@} y and } \\
-  \texttt{been wi\textcolor{Fuchsia}{@@} de\textcolor{Fuchsia}{@@} ly re\textcolor{Fuchsia}{@@} gar\textcolor{Fuchsia}{@@} ded as a b\textcolor{Fuchsia}{@@} ad mo\textcolor{Fuchsia}{@@} ve .}
+\begin{array}{ll}
+  \multirow{4}{*}{\textcolor{BrickRed}{100}} & \texttt{s\textcolor{Fuchsia}{@@} o w\textcolor{Fuchsia}{@@} e be\textcolor{Fuchsia}{@@} at on , b\textcolor{Fuchsia}{@@} o\textcolor{Fuchsia}{@@} at\textcolor{Fuchsia}{@@} s a\textcolor{Fuchsia}{@@} g\textcolor{Fuchsia}{@@} a\textcolor{Fuchsia}{@@} in\textcolor{Fuchsia}{@@} s\textcolor{Fuchsia}{@@} t } \\
+  {} & \texttt{the c\textcolor{Fuchsia}{@@} ur\textcolor{Fuchsia}{@@} r\textcolor{Fuchsia}{@@} en\textcolor{Fuchsia}{@@} t\textcolor{Fuchsia}{@@} ,}\\
+  {} & \texttt{b\textcolor{Fuchsia}{@@} or\textcolor{Fuchsia}{@@} n\textcolor{Fuchsia}{@@} e b\textcolor{Fuchsia}{@@} ac\textcolor{Fuchsia}{@@} k c\textcolor{Fuchsia}{@@} e\textcolor{Fuchsia}{@@} as\textcolor{Fuchsia}{@@} el\textcolor{Fuchsia}{@@} es\textcolor{Fuchsia}{@@} s\textcolor{Fuchsia}{@@} ly }\\
+  {} & \texttt{in\textcolor{Fuchsia}{@@} to the p\textcolor{Fuchsia}{@@} a\textcolor{Fuchsia}{@@} st\textcolor{Fuchsia}{@@} .} \\
+  \\
+  \multirow{2}{*}{\textcolor{BrickRed}{1K}} & \texttt{so we be\textcolor{Fuchsia}{@@} at on , bo\textcolor{Fuchsia}{@@} at\textcolor{Fuchsia}{@@} s against the c\textcolor{Fuchsia}{@@} ur\textcolor{Fuchsia}{@@} r\textcolor{Fuchsia}{@@} ent\textcolor{Fuchsia}{@@} ,} \\
+  {} & \texttt{bor\textcolor{Fuchsia}{@@} n\textcolor{Fuchsia}{@@} e back c\textcolor{Fuchsia}{@@} e\textcolor{Fuchsia}{@@} as\textcolor{Fuchsia}{@@} el\textcolor{Fuchsia}{@@} ess\textcolor{Fuchsia}{@@} ly into the pa\textcolor{Fuchsia}{@@} st\textcolor{Fuchsia}{@@} .} \\
+  \\
+  \multirow{2}{*}{\textcolor{BrickRed}{10K}} & \texttt{so we beat on , bo\textcolor{Fuchsia}{@@} ats against the cur\textcolor{Fuchsia}{@@} r\textcolor{Fuchsia}{@@} ent ,} \\
+  {} & \texttt{bor\textcolor{Fuchsia}{@@} ne back ceaselessly into the past . } \\
+  \\
+  \multirow{2}{*}{\textcolor{BrickRed}{Full}} & \texttt{so we beat on , boats against the current , }\\
+  {} & \texttt{borne back ceaselessly into the past .} \\
+\end{array}}
+\end{equation*}
+\end{frame}
+
+
+
+  % \texttt{there is a the\textcolor{Fuchsia}{@@} ory which st\textcolor{Fuchsia}{@@} at\textcolor{Fuchsia}{@@} es that if ever any\textcolor{Fuchsia}{@@} one } \\
+  % \texttt{di\textcolor{Fuchsia}{@@} sc\textcolor{Fuchsia}{@@} o\textcolor{Fuchsia}{@@} ver\textcolor{Fuchsia}{@@} s ex\textcolor{Fuchsia}{@@} ac\textcolor{Fuchsia}{@@} tly what the universe is for } \\
+  % \texttt{and why it is here , it will in\textcolor{Fuchsia}{@@} stan\textcolor{Fuchsia}{@@} tly di\textcolor{Fuchsia}{@@} s\textcolor{Fuchsia}{@@} ap\textcolor{Fuchsia}{@@} pe\textcolor{Fuchsia}{@@} ar } \\
+  % \texttt{and be re\textcolor{Fuchsia}{@@} pl\textcolor{Fuchsia}{@@} ac\textcolor{Fuchsia}{@@} ed by something even more bi\textcolor{Fuchsia}{@@} zar\textcolor{Fuchsia}{@@} re } \\
+  % \texttt{and in\textcolor{Fuchsia}{@@} ex\textcolor{Fuchsia}{@@} p\textcolor{Fuchsia}{@@} li\textcolor{Fuchsia}{@@} c\textcolor{Fuchsia}{@@} able . } \\
+  % \texttt{there is another the\textcolor{Fuchsia}{@@} ory which st\textcolor{Fuchsia}{@@} at\textcolor{Fuchsia}{@@} es that } \\
+  % \texttt{this has al\textcolor{Fuchsia}{@@} re\textcolor{Fuchsia}{@@} ad\textcolor{Fuchsia}{@@} y happ\textcolor{Fuchsia}{@@} ened .} \\
+  % \texttt{in the beg\textcolor{Fuchsia}{@@} in\textcolor{Fuchsia}{@@} ning the universe was cre\textcolor{Fuchsia}{@@} ated . } \\
+  % \texttt{this has made a lot of people very an\textcolor{Fuchsia}{@@} gr\textcolor{Fuchsia}{@@} y and } \\
+  % \texttt{been wi\textcolor{Fuchsia}{@@} de\textcolor{Fuchsia}{@@} ly re\textcolor{Fuchsia}{@@} gar\textcolor{Fuchsia}{@@} ded as a b\textcolor{Fuchsia}{@@} ad mo\textcolor{Fuchsia}{@@} ve .}
   %
   % \texttt{it was the b\textcolor{Fuchsia}{@@} est of times ,} \\
   % \texttt{it was the wor\textcolor{Fuchsia}{@@} st of times ,} \\
@@ -592,9 +612,6 @@
   % \texttt{it was the s\textcolor{Fuchsia}{@@} ea\textcolor{Fuchsia}{@@} son of dar\textcolor{Fuchsia}{@@} k\textcolor{Fuchsia}{@@} ness ,} \\
   % \texttt{it was the sp\textcolor{Fuchsia}{@@} r\textcolor{Fuchsia}{@@} ing of hope ,} \\
   % \texttt{it was the win\textcolor{Fuchsia}{@@} ter of des\textcolor{Fuchsia}{@@} pa\textcolor{Fuchsia}{@@} ir} \\
-\end{array}}
-\end{equation*}
-\end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
