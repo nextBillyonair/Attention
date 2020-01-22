@@ -37,6 +37,7 @@
 \usepackage{listings}
 \usepackage[export]{adjustbox}
 \usepackage{inconsolata}
+\usepackage[main=english,russian]{babel}
 
 
 % \usetheme{Boadilla}
@@ -822,6 +823,33 @@
 \begin{equation*}
   \ell(\mathbf{x}, y_i) = \mathds{1}_{\left\{y_i \not= \textcolor{WildStrawberry}{\langle \texttt{PAD} \rangle} \right\} } \cdot \left( -x_{y_i} + \log \sum_j \exp x_j \right)
 \end{equation*}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Automatic Evaluation: BLEU}
+  \begin{itemize}
+    \item \textcolor{ProcessBlue}{\underline{B}i\underline{l}ingual \underline{E}valuation \underline{U}nderstudy}
+    \item For an candidate and reference translation:
+    \begin{itemize}
+      \item Compare \textit{n}-gram precision of sizes 1 to 4
+      \item Brevity penalty for short translations
+    \end{itemize}
+  \end{itemize}
+  {\footnotesize
+  \begin{center}
+    \begin{tabular} {rll}
+      \texttt{Source}    & \foreignlanguage{russian}{У меня есть навыки управления временем моркови} & {} \\
+      \texttt{Reference} & I have the time management skills of a carrot & 1.00 \\
+      \midrule
+      \texttt{A}         & \textcolor{Red}{You got} \textcolor{RedViolet}{the} \textcolor{Red}{scheduling} \textcolor{Turquoise}{skills of a} \textcolor{Red}{banana} & 0.28 \\
+      \texttt{B}         & \textcolor{ForestGreen}{I have the time} \textcolor{Red}{to plant lettuce} & \textbf{0.39} \\
+      \texttt{C}         & \textcolor{NavyBlue}{I have} \textcolor{Turquoise}{time management skills} \textcolor{Red}{for} \textcolor{NavyBlue}{a carrot} & 0.35 \\
+    \end{tabular}
+  \end{center}
+  }
+  \begin{itemize}
+    \item \textbf{Key: \textcolor{ForestGreen}{4-gram}, \textcolor{Turquoise}{Trigram}, \textcolor{NavyBlue}{Bigram}, \textcolor{RedViolet}{Unigram}, \textcolor{Red}{No Match}}
+  \end{itemize}
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1875,6 +1903,7 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
     \item \href{https://arxiv.org/abs/1409.3215}{Sutskever et al., Sequence to Sequence Learning with Neural Networks}
     \item \href{https://arxiv.org/abs/1406.1078}{Cho et al., Learning Phrase Representations using RNN Encoder-Decoder for Statistical Machine Translation}
     \item \href{https://arxiv.org/pdf/1508.07909}{Sennrich et al., Neural Machine Translation of Rare Words with Subword Units}
+    \item \href{https://www.aclweb.org/anthology/P02-1040.pdf}{Papineni et al., BLEU: a Method for Automatic Evaluation of Machine Translation}
     \item \href{https://arxiv.org/abs/1709.07809}{Koehn, Neural Machine Translation}
     \item \href{https://www.aclweb.org/anthology/W17-3204.pdf}{Koehn, Six Challenges for Neural Machine Translation}
     \item \href{https://github.com/THUNLP-MT/MT-Reading-List}{Curated Machine Translation Reading List}
