@@ -70,6 +70,29 @@
 \titlepage
 \end{frame}
 
+\begin{frame}
+  \frametitle{Types of Recurrent Models}
+  \begin{figure}
+    \includegraphics[height=3cm, valign=c]{assets/typesmodels}
+    \caption{\footnotesize Source: \href{http://cs231n.stanford.edu/slides/2017/cs231n_2017_lecture10.pdf}{Fei-Fei Li \& Justin Johnson \& Serena Yeung, Standford CS231, Recurrent Neural Networks}}
+  \end{figure}
+  {\footnotesize
+  \begin{center}
+    \begin{tabular}{lccc}
+      \toprule
+      Type &  Input $T_x$ & Output $T_y$ & Example \\
+      \midrule
+      One-to-One & $T_x = 1$ & $T_y= 1$ & Vanilla NN\\
+      One-to-Many & $T_x = 1$ & $T_y > 1$ & Image Captioning\\
+      Many-to-One & $T_x > 1$ & $T_y = 1$ &  Sentiment Classification  \\
+      Many-to-Many & $T_x \not= T_y$ & $T_x \not= T_y$ & Machine Translation   \\
+      Many-to-Many & $T_x = T_y$ & $T_x = T_y$ & Name Entity Recognition  \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+  }
+\end{frame}
+
 
 \begin{frame}
 \frametitle{What are Sequence to Sequence Models?}
