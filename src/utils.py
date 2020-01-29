@@ -134,6 +134,16 @@ def make_minibatch(src, tgt, max_size=32):
     tensors.append(current_tensor)
     return tensors
 
+def make_table_set(train_text, test_text, max_vocab_size=10000, pad=False):
+    src_train = [[preprocess_sentence(row) for row in table] for table in train_text[0]]
+    src_test = [[preprocess_sentence(row) for row in table] for table in test_text[0]]
+    tgt_train = [[preprocess_sentence(row) for row in table] for table in train_text[1]]
+    tgt_test = [[preprocess_sentence(row) for row in table] for table in test_text[1]]
+
+    # src_train, src_test, tgt_train, tgt_test = train_test_split(source_text, target_text, test_size=test_size)
+    src_vocab, tgt_vocab = Vocab(max_vocab_size), Vocab(max_vocab_size)
+    src_vocab.build_vocab([sent for sent in table for table in src_train]); tgt_vocab.build_vocab([sent for sent in table for table in tgt_train])
+
 
 
 def make_dataset(train_text, test_text, train_batch_size=32, test_batch_size=64, max_vocab_size=10000, pad=False):

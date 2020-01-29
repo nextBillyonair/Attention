@@ -9,6 +9,7 @@
 \usepackage{microtype}      % microtypography
 \usepackage{amsmath}
 \usepackage{mathtools}
+\usepackage{esvect}
 \usepackage{xcolor}
 \usepackage{tikz}
 \usetikzlibrary{calc}
@@ -966,13 +967,33 @@
 % \section{Seq2Seq in Action: Advanced Techniques\\Part 2\\January 23, 2020}
 
 \begin{frame}
+  \frametitle{Types of Recurrent Models}
+  \begin{figure}
+    \includegraphics[height=3cm, valign=c]{assets/typesmodels}
+    \caption{\footnotesize Source: \href{http://cs231n.stanford.edu/slides/2017/cs231n_2017_lecture10.pdf}{Fei-Fei Li \& Justin Johnson \& Serena Yeung, Standford CS231, Recurrent Neural Networks}}
+  \end{figure}
+  {\footnotesize
+  \begin{center}
+    \begin{tabular}{lccc}
+      \toprule
+      Type &  Input $T_x$ & Output $T_y$ & Example \\
+      \midrule
+      One-to-One & $T_x = 1$ & $T_y= 1$ & Vanilla NN\\
+      One-to-Many & $T_x = 1$ & $T_y > 1$ & Image Captioning\\
+      Many-to-One & $T_x > 1$ & $T_y = 1$ &  Sentiment Classification  \\
+      Many-to-Many & $T_x \not= T_y$ & $T_x \not= T_y$ & Machine Translation   \\
+      Many-to-Many & $T_x = T_y$ & $T_x = T_y$ & Name Entity Recognition  \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+  }
+\end{frame}
+
+\begin{frame}
   \frametitle{Quick Review: Table Extraction}
   % update with prettier one from test
   \begin{figure}
-    \includegraphics[width=0.45\textwidth, valign=c]{assets/table_rotated}
-    \pause
-    $\longrightarrow$
-    \includegraphics[width=0.45\textwidth, valign=c]{assets/mask3}
+    \includegraphics[height=7.5cm, valign=c]{assets/pipeline_img}
   \end{figure}
 \end{frame}
 
@@ -980,10 +1001,7 @@
   \frametitle{Quick Review: Table Extraction}
   % update with prettier one from test
   \begin{figure}
-    \includegraphics[width=0.45\textwidth, valign=c]{assets/mask3}
-    \pause
-    $\longrightarrow$
-    \includegraphics[width=0.45\textwidth, valign=c]{assets/tesseract}
+    \includegraphics[height=7.5cm, valign=c]{assets/pipeline_mask}
   \end{figure}
 \end{frame}
 
@@ -991,12 +1009,19 @@
   \frametitle{Quick Review: Table Extraction}
   % update with prettier one from test
   \begin{figure}
-    \includegraphics[width=0.45\textwidth, valign=c]{assets/tesseract}
-    \pause
-    $\longrightarrow$
-    \includegraphics[width=0.45\textwidth, valign=c]{assets/result1}
+    \includegraphics[height=6cm, valign=c]{assets/pipeline_tesseract}
   \end{figure}
 \end{frame}
+
+\begin{frame}
+  \frametitle{Quick Review: Table Extraction}
+  % update with prettier one from test
+  \begin{figure}
+    \includegraphics[height=7.5cm, valign=c]{assets/pipeline_csv}
+  \end{figure}
+\end{frame}
+
+%%%%%%% END TABLE RECAP
 
 \begin{frame}
   \frametitle{Outline Review}
@@ -1004,10 +1029,10 @@
     \item We have covered:
     \begin{itemize}
       \item Seq2Seq Models, Encoders, Decoders
-      \item Vocabulary and Word Embeddings
+      \item Handling Vocabulary and Word Embeddings
       \item Training Tips and Techniques
     \end{itemize}
-    \item Part 2:
+    \item Part 2 mixes concepts and practical applications:
     \begin{itemize}
       \item Decoding with Beam Search
       \item Modeling Recurrent Relations (RNNs)
@@ -1195,6 +1220,18 @@
   \end{figure}
 \end{frame}
 
+\begin{frame}
+\frametitle{Bidirectional Sequence Modeling}
+\begin{figure}
+  \centering
+  \includegraphics[width=10cm]{assets/bidirectional}
+\end{figure}
+\begin{itemize}
+  \item Can capture both left and right context
+  \item Implementation usually concatenates RNN states
+\end{itemize}
+\end{frame}
+
 
 \begin{frame}
 \frametitle{Aside: Different Perspectives on Deep Recurrent Models}
@@ -1214,19 +1251,6 @@
   \includegraphics[width=9cm]{assets/alternate_stacked}
 \end{figure}
 \end{frame}
-
-\begin{frame}
-\frametitle{Bidirectional Sequence Modeling}
-\begin{figure}
-  \centering
-  \includegraphics[width=10cm]{assets/bidirectional}
-\end{figure}
-\begin{itemize}
-  \item Can capture both left and right context
-  \item Implementation usually concatenates RNN states
-\end{itemize}
-\end{frame}
-
 
 
 \begin{frame}
@@ -1262,14 +1286,21 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
 \begin{frame}
 \frametitle{Aside: The Influence of Padding in RNNs}
   \begin{itemize}
-    \item Assume the embedding $E\left[ \textcolor{WildStrawberry}{\langle \texttt{PAD} \rangle} \right] = \mathbf{0}$
+    \item Assume the embedding $E\left[ \textcolor{WildStrawberry}{\langle \texttt{PAD} \rangle} \right] = \mathbf{\vv{0}}$
     \item Are we safe? \pause \textbf{NO!}
     \item Because of the bias term, zero input does not result in a zero output
     \begin{itemize}
       \item This alters the hidden state being passed onto the next iteration
+      \item So be carful if taking the last output of a sequence with padding
+      \item Make sure that the reverse direction in bidirectionals are not computing padded states
     \end{itemize}
-    \item Don't even think about the mess bidirectionals become...
+    \item \textbf{Question:} Why does this matter?
+    \pause
+    \item \textbf{Answer:} RNNs assume $\mathbf{\vv{0}}$ initial hidden state
+    \pause
     \item \textbf{Question:} Does this mean we learn the amount of padding for a given sequence?
+    \pause
+    \item \textbf{Answer:} Most likely, since gradients now incorporate repeated application of activation functions for the bias term.
   \end{itemize}
 \end{frame}
 
@@ -1291,9 +1322,9 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
 \end{frame}
 
 \begin{frame}
-  \frametitle{Column Segmentation: Throw away the decoder}
+  \frametitle{Column Segmentation: Merge the Encoder and Decoder}
   \begin{itemize}
-    \item Just use an encoder, with an output layer
+    \item Just use the encoder's embeddings and recurrent layers, with an decoding output layer
     \item For every token, predict if we should insert a $\textcolor{WildStrawberry}{\langle \texttt{SEG} \rangle}$
     \item No longer have to learn the actual sequence
   \end{itemize}
@@ -1306,6 +1337,7 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
 \begin{frame}
   \frametitle{Independent Row: Training Labels}
   \begin{itemize}
+    \item Sequences are table rows
     \item Labels are now binary vectors, where $x_i = 1$ implies that there is a $\textcolor{WildStrawberry}{\langle \texttt{SEG} \rangle}$
       between $x_i$ and $x_{i+1}$
   \end{itemize}
@@ -1517,7 +1549,7 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
     \begin{itemize}
       \item Bidirectional for each row
       \item Propagate hidden state to next row
-      \item Linear layers for prediction
+      \item Jointly train over an entire table
     \end{itemize}
   \end{itemize}
   \begin{figure}
@@ -1773,7 +1805,7 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
     \begin{itemize}
       \item Is this a good choice?
       \item What if we flip the bidirectional hidden states every iteration
-      \item AKA the beginning of a new row has the hidden state info from the beginning of the last row
+      \item AKA the reverse direction has the immediate context of the end of the row
       \item And vice-versa
     \end{itemize}
   \end{itemize}
@@ -1877,20 +1909,21 @@ Out & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cdot H_{out}$   & $B, L, N_D \cd
     \item Is there any benefit to swapping hidden states during propagation?
     \item \textbf{Note:}
     \begin{itemize}
-      \item We use the concept of \textit{deep transition} in Seq2Seq for joint training
-      \item Where our training is dependent on the hidden state encoding useful information
+      \item We use the concept of \textit{deep transition} in Seq2Seq for joint training between rows
+      \item Our training exploits the finding that we can capture enough signal in the hidden state encoding
     \end{itemize}
   \end{itemize}
 \end{frame}
 
 
 \begin{frame}
-  \frametitle{Future Plans}
+  \frametitle{Possible Experiments}
   \begin{itemize}
     \item Features
     \begin{itemize}
       \item Use word location information
       \item Tesseract gives bounding boxes
+      \item Visual cues
     \end{itemize}
     \item Encoder Structure
     \begin{itemize}
