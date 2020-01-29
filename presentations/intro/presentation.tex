@@ -966,18 +966,52 @@
 % \section{Seq2Seq in Action: Advanced Techniques\\Part 2\\January 23, 2020}
 
 \begin{frame}
-  \frametitle{Review}
+  \frametitle{Quick Review: Table Extraction}
+  % update with prettier one from test
+  \begin{figure}
+    \includegraphics[width=0.45\textwidth, valign=c]{assets/table_rotated}
+    \pause
+    $\longrightarrow$
+    \includegraphics[width=0.45\textwidth, valign=c]{assets/mask3}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Quick Review: Table Extraction}
+  % update with prettier one from test
+  \begin{figure}
+    \includegraphics[width=0.45\textwidth, valign=c]{assets/mask3}
+    \pause
+    $\longrightarrow$
+    \includegraphics[width=0.45\textwidth, valign=c]{assets/tesseract}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Quick Review: Table Extraction}
+  % update with prettier one from test
+  \begin{figure}
+    \includegraphics[width=0.45\textwidth, valign=c]{assets/tesseract}
+    \pause
+    $\longrightarrow$
+    \includegraphics[width=0.45\textwidth, valign=c]{assets/result1}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Outline Review}
   \begin{itemize}
     \item We have covered:
     \begin{itemize}
-      \item What are Seq2Seq Models?
-      \item How can I reduce my vocabulary size?
-      \item How do I train a Seq2Seq model?
+      \item Seq2Seq Models, Encoders, Decoders
+      \item Vocabulary and Word Embeddings
+      \item Training Tips and Techniques
     \end{itemize}
-    \item Part 2 will explore more advanced concepts such as:
+    \item Part 2:
     \begin{itemize}
       \item Decoding with Beam Search
-      \item Modeling Recurrent Relations
+      \item Modeling Recurrent Relations (RNNs)
+      \item Updating the Column Segmentation Model
       \item Other applications of Sequence Modeling
     \end{itemize}
   \end{itemize}
