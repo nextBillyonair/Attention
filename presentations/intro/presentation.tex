@@ -967,6 +967,26 @@
 % \section{Seq2Seq in Action: Advanced Techniques\\Part 2\\January 23, 2020}
 
 \begin{frame}
+  \frametitle{Outline Review}
+  \begin{itemize}
+    \item We have covered:
+    \begin{itemize}
+      \item Seq2Seq Models, Encoders, Decoders
+      \item Handling Vocabulary and Word Embeddings
+      \item Training Tips and Techniques
+    \end{itemize}
+    \item Part 2 mixes concepts and practical applications:
+    \begin{itemize}
+      \item Table Pipeline Review
+      \item Decoding with Beam Search
+      \item Modeling Recurrent Relations (RNNs)
+      \item Updating the Column Segmentation Model
+      \item Other applications of Sequence Modeling
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
   \frametitle{Types of Recurrent Models}
   \begin{figure}
     \includegraphics[height=3cm, valign=c]{assets/typesmodels}
@@ -1022,25 +1042,6 @@
 \end{frame}
 
 %%%%%%% END TABLE RECAP
-
-\begin{frame}
-  \frametitle{Outline Review}
-  \begin{itemize}
-    \item We have covered:
-    \begin{itemize}
-      \item Seq2Seq Models, Encoders, Decoders
-      \item Handling Vocabulary and Word Embeddings
-      \item Training Tips and Techniques
-    \end{itemize}
-    \item Part 2 mixes concepts and practical applications:
-    \begin{itemize}
-      \item Decoding with Beam Search
-      \item Modeling Recurrent Relations (RNNs)
-      \item Updating the Column Segmentation Model
-      \item Other applications of Sequence Modeling
-    \end{itemize}
-  \end{itemize}
-\end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Decoding: Making better Translations}
@@ -1132,6 +1133,52 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Modeling Recurrent Relations with RNNs}
+
+\begin{frame}
+  \frametitle{RNN Forward Propagation}
+  \begin{itemize}
+    \item \textbf{Concept:} Allow current sample to mix with previous information
+    \item Learn from the pattern's history
+  \end{itemize}
+  \begin{figure}
+    \centering
+    \includegraphics[width=0.75\textwidth, valign=c]{assets/rnnt1}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{RNN Forward Propagation}
+  \begin{itemize}
+    \item We can unfold the computation graph
+  \end{itemize}
+  \begin{figure}
+    \centering
+    \includegraphics[width=0.75\textwidth, valign=c]{assets/rnnt2}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{RNN Forward Propagation}
+  \begin{itemize}
+    \item Notice how each cell output is dependent on all prior computations
+  \end{itemize}
+  \begin{figure}
+    \centering
+    \includegraphics[width=0.75\textwidth, valign=c]{assets/rnnt3}
+  \end{figure}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Back-Propagation Through Time}
+  \begin{itemize}
+    \item Hence gradients flow through the entire unfolded graph
+    \item Note: we reuse the cell, so the parameters are the same at each time step
+  \end{itemize}
+  \begin{figure}
+    \centering
+    \includegraphics[width=0.75\textwidth, valign=c]{assets/bptt}
+  \end{figure}
+\end{frame}
 
 \begin{frame}
 \frametitle{Vanilla RNNs}
